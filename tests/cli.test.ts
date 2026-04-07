@@ -1,0 +1,36 @@
+import { describe, it, expect } from "vitest";
+import { parseArgs } from "../src/cli.js";
+
+describe("parseArgs", () => {
+  it("defaults to 'run' command", () => {
+    const cmd = parseArgs([]);
+    expect(cmd.command).toBe("run");
+  });
+
+  it("parses 'status' command", () => {
+    const cmd = parseArgs(["status"]);
+    expect(cmd.command).toBe("status");
+  });
+
+  it("parses '--explain' flag", () => {
+    const cmd = parseArgs(["--explain"]);
+    expect(cmd.command).toBe("explain");
+  });
+
+  it("parses 'run <step-id>' command", () => {
+    const cmd = parseArgs(["run", "build-wave:0"]);
+    expect(cmd.command).toBe("run-step");
+    expect(cmd.stepId).toBe("build-wave:0");
+  });
+
+  it("parses 'reset <step-id>' command", () => {
+    const cmd = parseArgs(["reset", "build-wave:0"]);
+    expect(cmd.command).toBe("reset");
+    expect(cmd.stepId).toBe("build-wave:0");
+  });
+
+  it("parses 'init' command", () => {
+    const cmd = parseArgs(["init"]);
+    expect(cmd.command).toBe("init");
+  });
+});
