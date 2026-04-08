@@ -34,4 +34,27 @@ describe("E2eScaffoldStep", () => {
     expect(result.status).toBe("failed");
     expect(result.message).toContain("scaffold error");
   });
+
+  it("execute generates starter playwright config when missing", async () => {
+    const invokeCommand = vi.fn(async () => ({ success: true, output: "done", artifacts: ["e2e/test.spec.ts"] }));
+    const exists = vi.fn(async (path: string): Promise<boolean> => {
+      return !path.includes("playwright.config");
+    });
+    const ctx = makeMockContext({ invokeCommand, exists });
+    const step = new E2eScaffoldStep(makeDefinition());
+    const result = await step.execute(ctx);
+    expect(result.status).toBe("passed");
+    expect(result.message).toContain("Generated starter Playwright config");
+    expect(result.message).toContain("Generated docs/ci-evidence-upload.md");
+  });
+
+  it("does not generate config when one already exists", async () => {
+    const invokeCommand = vi.fn(async () => ({ success: true, output: "done", artifacts: [] }));
+    const exists = vi.fn(async () => true);
+    const ctx = makeMockContext({ invokeCommand, exists });
+    const step = new E2eScaffoldStep(makeDefinition());
+    const result = await step.execute(ctx);
+    expect(result.status).toBe("passed");
+    expect(result.message).toBe("E2E tests scaffolded.");
+  });
 });
