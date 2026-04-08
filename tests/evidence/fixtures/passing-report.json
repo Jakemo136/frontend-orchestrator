@@ -1,0 +1,48 @@
+{
+  "config": {},
+  "suites": [
+    {
+      "title": "upload.e2e.ts",
+      "specs": [
+        {
+          "title": "upload flow > accepts valid file",
+          "ok": true,
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 1200,
+                  "attachments": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "upload flow > shows progress bar",
+          "ok": true,
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 800,
+                  "attachments": []
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "expected": 2,
+    "unexpected": 0,
+    "skipped": 0,
+    "duration": 2000
+  }
+}

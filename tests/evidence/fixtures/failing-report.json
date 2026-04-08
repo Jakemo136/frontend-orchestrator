@@ -1,0 +1,127 @@
+{
+  "config": {},
+  "suites": [
+    {
+      "title": "upload.e2e.ts",
+      "file": "client/e2e/upload.e2e.ts",
+      "specs": [
+        {
+          "title": "upload flow > accepts valid file",
+          "ok": true,
+          "tests": [
+            {
+              "status": "expected",
+              "results": [
+                {
+                  "status": "passed",
+                  "duration": 1200,
+                  "attachments": []
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "upload flow > rejects invalid file type",
+          "ok": false,
+          "tests": [
+            {
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 3400,
+                  "error": {
+                    "message": "Expected: visible\nReceived: hidden",
+                    "stack": "Error: Expected: visible\n    at upload.e2e.ts:42"
+                  },
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "path": "test-results/upload-flow-rejects/trace.zip",
+                      "contentType": "application/zip"
+                    },
+                    {
+                      "name": "screenshot",
+                      "path": "test-results/upload-flow-rejects/test-failed-1.png",
+                      "contentType": "image/png"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "upload flow > shows error on network failure",
+          "ok": false,
+          "tests": [
+            {
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 5100,
+                  "error": {
+                    "message": "Timed out waiting for element",
+                    "stack": "Error: Timed out\n    at upload.e2e.ts:67"
+                  },
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "path": "test-results/upload-flow-network/trace.zip",
+                      "contentType": "application/zip"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "title": "auth.e2e.ts",
+      "file": "client/e2e/auth.e2e.ts",
+      "specs": [
+        {
+          "title": "login > redirects after success",
+          "ok": false,
+          "tests": [
+            {
+              "status": "unexpected",
+              "results": [
+                {
+                  "status": "failed",
+                  "duration": 2200,
+                  "error": {
+                    "message": "Expected URL: /dashboard\nReceived: /login",
+                    "stack": "Error: Expected URL\n    at auth.e2e.ts:23"
+                  },
+                  "attachments": [
+                    {
+                      "name": "trace",
+                      "path": "test-results/login-redirects/trace.zip",
+                      "contentType": "application/zip"
+                    },
+                    {
+                      "name": "screenshot",
+                      "path": "test-results/login-redirects/test-failed-1.png",
+                      "contentType": "image/png"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "stats": {
+    "expected": 1,
+    "unexpected": 3,
+    "skipped": 0,
+    "duration": 11900
+  }
+}
