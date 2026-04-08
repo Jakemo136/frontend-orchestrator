@@ -47,6 +47,7 @@ export interface OrchestratorConfig {
     required_on_feature: string[];
     informational_on_feature: string[];
   };
+  dev_server_url: string;
   evidence: EvidenceConfig;
   steps?: StepDefinition[];
 }

@@ -44,6 +44,7 @@ export const configSchema = z.object({
     dev_server: z.string().min(1),
     typecheck: z.string().min(1),
   }),
+  dev_server_url: z.string().url().default("http://localhost:3000"),
   ci: z.object({
     required_on_main: z.array(z.string()),
     required_on_feature: z.array(z.string()),

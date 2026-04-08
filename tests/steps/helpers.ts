@@ -33,6 +33,7 @@ export function makeMockContext(overrides: Partial<RunContext> = {}): RunContext
         typecheck: "npx tsc --noEmit",
       },
       ci: { required_on_main: [], required_on_feature: [], informational_on_feature: [] },
+      dev_server_url: "http://localhost:3000",
       evidence: {
         playwright_config: "playwright.config.ts",
         output_dir: "test-results",

@@ -17,13 +17,14 @@ export class DesignAuditStep extends BaseStep {
   }
 
   async preflight(ctx: RunContext): Promise<PreflightResult> {
+    const url = ctx.config.dev_server_url;
     const health = await ctx.exec(
-      "curl -s -o /dev/null -w '%{http_code}' http://localhost:3000",
+      `curl -s -o /dev/null -w '%{http_code}' ${url}`,
     );
     const isUp = health.stdout.trim() === "200";
     return {
       ready: isUp,
-      issues: isUp ? [] : ["Dev server not responding at http://localhost:3000"],
+      issues: isUp ? [] : [`Dev server not responding at ${url}`],
     };
   }
 
