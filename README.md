@@ -13,20 +13,15 @@ You approve at every gate: the build plan, each wave's audit results, visual bas
 ## Quick start
 
 ```sh
-# 1. Clone into your workspace
+# 1. Clone and install
 git clone https://github.com/Jakemo136/frontend-orchestrator.git \
   .claude/plugins/frontend-orchestration
+.claude/plugins/frontend-orchestration/setup.sh
+```
 
-# 2. Install dependencies
-cd .claude/plugins/frontend-orchestration/runner && npm install
-cd ../mcp/a11y-scanner && npm install
-cd ../screenshot-review && npm install
+Then create `orchestrator.config.yaml` in your project root — edit the values to match your project:
 
-# 3. Install browsers
-npx playwright install chromium
-
-# 4. Create project config
-cd /your/project && cat > orchestrator.config.yaml << 'YAML'
+```yaml
 project: my-app
 scope:
   type: app
@@ -52,7 +47,6 @@ ci:
   required_on_main: [client, e2e]
   required_on_feature: [client]
   informational_on_feature: [e2e]
-YAML
 ```
 
 ## Commands
