@@ -1,0 +1,47 @@
+{
+  "_comment": [
+    "Frontend-orchestration quality gate hooks.",
+    "These enforce that code-reviewer and code-simplifier agents both run",
+    "before any git commit is allowed.",
+    "",
+    "To install: merge the 'hooks' object below into your .claude/settings.json.",
+    "See install-hooks.md in this directory for full instructions."
+  ],
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "rm -rf /tmp/claude-commit-gates && mkdir -p /tmp/claude-commit-gates",
+            "statusMessage": "Resetting commit quality gates..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "jq -r '.tool_input.subagent_type // \"\"' | { read -r st; case \"$st\" in *code-reviewer*) mkdir -p /tmp/claude-commit-gates && touch /tmp/claude-commit-gates/code-review ;; *code-simplifier*) mkdir -p /tmp/claude-commit-gates && touch /tmp/claude-commit-gates/code-simplifier ;; esac; }",
+            "statusMessage": "Tracking quality gate..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git *)",
+            "command": "jq -r '.tool_input.command' | { read -r cmd; case \"$cmd\" in git*commit*) missing=''; [ ! -f /tmp/claude-commit-gates/code-review ] && missing='code-review'; [ ! -f /tmp/claude-commit-gates/code-simplifier ] && { [ -n \"$missing\" ] && missing=\"$missing, \"; missing=\"${missing}code-simplifier\"; }; if [ -n \"$missing\" ]; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Commit blocked — missing quality gates: %s. Run /simplify and use the code-reviewer agent before committing.\"}}' \"$missing\"; fi ;; esac; }"
+          }
+        ]
+      }
+    ]
+  }
+}

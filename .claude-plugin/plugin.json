@@ -1,0 +1,8 @@
+{
+  "name": "frontend-orchestration",
+  "description": "UI requirements interview, TDD component build orchestration, design audits, and parallel build pipeline for frontend projects",
+  "version": "1.0.0",
+  "author": {
+    "name": "Jake Mosher"
+  }
+}

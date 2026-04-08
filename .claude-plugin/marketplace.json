@@ -1,0 +1,18 @@
+{
+  "name": "frontend-orchestration-local",
+  "description": "Local marketplace for frontend orchestration plugin",
+  "owner": {
+    "name": "Jake Mosher"
+  },
+  "plugins": [
+    {
+      "name": "frontend-orchestration",
+      "description": "UI requirements interview, TDD component build orchestration, design audits, and parallel build pipeline for frontend projects",
+      "version": "1.0.0",
+      "source": "./",
+      "author": {
+        "name": "Jake Mosher"
+      }
+    }
+  ]
+}

@@ -1,3 +1,14 @@
-node_modules/
-dist/
-*.tgz
+# Runner build artifacts
+runner/node_modules/
+runner/dist/
+runner/*.tgz
+
+# MCP server dependencies
+mcp/a11y-scanner/node_modules/
+mcp/screenshot-review/node_modules/
+
+# Runtime / orchestrator state
+.orchestrator/
+
+# OS
+.DS_Store
