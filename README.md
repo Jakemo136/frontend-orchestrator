@@ -77,23 +77,38 @@ ci:
 
 ## How it works
 
-```
-/ui-interview
-    |
-    v
-UI_REQUIREMENTS.md + COMPONENT_INVENTORY.md
-    |
-    v
-/build-pipeline
-    |
-    +---> Phase 1: E2E tests written (must fail initially)
-    +---> Phase 2: Components grouped into dependency waves
-    +---> Phase 3: Each wave built TDD, reviewed, audited, PR'd
-    +---> Phase 4: E2E green, design audit, visual QA, baseline
-    +---> Phase 5: Final review, merge to main
+```mermaid
+graph TD
+    A["/ui-interview"] --> B["UI_REQUIREMENTS.md +<br/>COMPONENT_INVENTORY.md"]
+    B --> C["/build-pipeline"]
+    C --> D["Phase 1+2 (parallel)"]
+    D --> D1["E2E tests written<br/>(must fail initially)"]
+    D --> D2["Components grouped<br/>into dependency waves"]
+    D1 --> E["Phase 3: Wave build"]
+    D2 --> E
+    E --> E1["Wave 0: all components in parallel"]
+    E1 --> E2["Wave 1: all components in parallel"]
+    E2 --> E3["Wave N..."]
+    E3 --> F["Phase 4: E2E green, design audit,<br/>visual QA, baseline"]
+    F --> G["Phase 5: Final review, merge to main"]
+
+    style D fill:#1a1a2e,stroke:#e94560,color:#fff
+    style E fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style F fill:#1a1a2e,stroke:#533483,color:#fff
 ```
 
 Each phase gates on the previous. The pipeline can resume from any checkpoint.
+
+## Parallelization
+
+The orchestrator dispatches as many subagents as possible in parallel. Within each wave, every component builds simultaneously — not one at a time. Audits, screenshots, and reviews also parallelize per route. This prevents any single agent from bloating its context trying to solo-hero a multi-component step.
+
+Specifically:
+- **E2E test writing + dependency resolution** run in parallel (Phase 1+2)
+- **All components in a wave** build in parallel via separate subagents
+- **Design audit** dispatches static analysis, axe-core, and screenshot capture in parallel
+- **Visual QA** dispatches one reviewer per route in parallel
+- **E2E test files** are written in parallel, one subagent per user flow
 
 ## What's inside
 
