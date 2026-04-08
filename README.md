@@ -105,6 +105,30 @@ frontend-orchestration/
 
 The design audit and a11y steps aren't an LLM squinting at code and guessing. They're layered: automated tooling produces hard data, then agents review what the tools can't catch.
 
+```mermaid
+graph TD
+    A["<b>Layer 1: axe-core</b><br/>Real Chromium browser runs axe-core<br/>against the live DOM — WCAG 2.2 AA"] --> B
+    B["<b>Layer 2: Screenshots</b><br/>Full-page captures at 375 / 768 /<br/>1280 / 1440px from a real browser"] --> C
+    C["<b>Layer 3: Visual Composition Review</b><br/>Agent reviews every screenshot against<br/>a checklist — as a first-time user"] --> D
+    D["<b>Layer 4: Codified Standards</b><br/>WCAG AA, Nielsen's 10, Gestalt, contrast<br/>ratios, touch targets, frustration signals"] --> E
+    E["<b>Layer 5: Auto-fix + Re-verify</b><br/>Fix Critical/Major → re-run axe-core →<br/>fresh screenshots → re-review"]
+    F["<b>Layer 6: UX Quality Review</b><br/>Separate /visual-qa pass: heuristics,<br/>Gestalt, interaction quality, frustration"] --> G
+
+    E --> F
+    G{"All layers<br/>pass?"}
+    G -- "Yes" --> H["PRs opened"]
+    G -- "No" --> E
+
+    style A fill:#1a1a2e,stroke:#e94560,color:#fff
+    style B fill:#1a1a2e,stroke:#e94560,color:#fff
+    style C fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style D fill:#1a1a2e,stroke:#0f3460,color:#fff
+    style E fill:#1a1a2e,stroke:#16213e,color:#fff
+    style F fill:#1a1a2e,stroke:#533483,color:#fff
+    style G fill:#1a1a2e,stroke:#e94560,color:#fff
+    style H fill:#0f3460,stroke:#e94560,color:#fff
+```
+
 **Layer 1: axe-core (machine, not vibes).** The a11y-scanner MCP server launches a real Chromium browser, navigates to your running app, and runs [axe-core](https://github.com/dequelabs/axe-core) against the live DOM. axe-core is the industry standard — it powers the accessibility checks in Chrome DevTools, Lighthouse, and most enterprise a11y workflows. When it reports a WCAG 2.2 AA violation, that's a real DOM element failing a real WCAG success criterion, not an inference.
 
 **Layer 2: Screenshots at four breakpoints (evidence, not assumptions).** The screenshot-review MCP server captures full-page screenshots at 375px, 768px, 1280px, and 1440px. These are real renders from a real browser — layout issues, overflow, clipping, and responsive breakage show up as visual artifacts, not as code-pattern guesses.
@@ -115,7 +139,7 @@ The design audit and a11y steps aren't an LLM squinting at code and guessing. Th
 
 **Layer 5: Auto-fix with re-verification.** When the audit finds Critical or Major issues, it fixes them and re-runs the entire audit — axe-core scan, fresh screenshots, visual review. The fix isn't done until the re-scan confirms resolution. Minor issues are flagged for human review, never auto-fixed.
 
-**UX quality review (`/visual-qa`) — a separate pass with a different lens.** The design audit catches "is this built correctly?" The UX quality review asks "does this feel right to use?" It evaluates against Nielsen's 10 usability heuristics (system status visibility, error prevention, recognition over recall, etc.), Gestalt principles (proximity, similarity, continuity), interaction quality (44x44px touch targets, affordances, form UX, perceived performance), and 10 specific frustration signals — dead clicks, mystery meat navigation, data loss risk, forced detours, ambiguous actions, silent failures, jarring transitions, cognitive overload, inconsistent behavior, and broken expectations. Run it after `/design-audit` passes — a11y compliance first, then UX.
+**Layer 6: UX quality review (`/visual-qa`).** A separate pass with a different lens. The design audit catches "is this built correctly?" The UX quality review asks "does this feel right to use?" It evaluates against Nielsen's 10 usability heuristics (system status visibility, error prevention, recognition over recall, etc.), Gestalt principles (proximity, similarity, continuity), interaction quality (44x44px touch targets, affordances, form UX, perceived performance), and 10 specific frustration signals — dead clicks, mystery meat navigation, data loss risk, forced detours, ambiguous actions, silent failures, jarring transitions, cognitive overload, inconsistent behavior, and broken expectations. Run it after `/design-audit` passes — a11y compliance first, then UX.
 
 The confidence comes from the stack: machine-verified a11y, real browser renders, structured visual review, codified standards, heuristic UX evaluation, and re-verification after fixes. No single layer is sufficient alone, but together they catch categories of issues that code review misses.
 
