@@ -60,4 +60,16 @@ describe("TestSuiteStep", () => {
     expect(result.status).toBe("failed");
     expect(result.message).toContain("E2E tests failed (blocking)");
   });
+
+  it("populates evidence field after e2e run", async () => {
+    let callCount = 0;
+    const exec = vi.fn(async () => {
+      callCount++;
+      return { exitCode: callCount === 3 ? 1 : 0, stdout: "", stderr: "", timedOut: false };
+    });
+    const ctx = makeMockContext({ exec });
+    const step = new TestSuiteStep(makeDefinition({ params: { e2e_blocking: true } }));
+    const result = await step.execute(ctx);
+    expect(result).toHaveProperty("evidence");
+  });
 });

@@ -1,5 +1,6 @@
 import { BaseStep } from "./base.js";
 import { registerStep } from "./registry.js";
+import { tryParseEvidence } from "../evidence/utils.js";
 import type { StepDescription, PreflightResult, StepResult, RunContext } from "../types.js";
 
 export class TestSuiteStep extends BaseStep {
@@ -18,6 +19,16 @@ export class TestSuiteStep extends BaseStep {
 
   async preflight(_ctx: RunContext): Promise<PreflightResult> {
     return { ready: true, issues: [] };
+  }
+
+  private buildSuccessMessage(e2ePassed: boolean, evidence: any): string {
+    if (e2ePassed) {
+      return evidence ? `All ${evidence.totalTests} tests passed.` : "All tests passed.";
+    }
+    if (evidence) {
+      return `Typecheck and client tests passed. ${evidence.failed}/${evidence.totalTests} E2E failures recorded (non-blocking). Evidence: ${evidence.manifestPath}`;
+    }
+    return "Typecheck and client tests passed. E2E failures recorded (non-blocking).";
   }
 
   async execute(ctx: RunContext): Promise<StepResult> {
@@ -46,22 +57,38 @@ export class TestSuiteStep extends BaseStep {
     const e2e = await ctx.exec(ctx.config.commands.test_e2e);
     const e2ePassed = e2e.exitCode === 0;
 
+    const evidence = tryParseEvidence(ctx, this.definition.id);
+
     if (!e2ePassed && e2eBlocking) {
       return {
         status: "failed",
-        artifacts: [],
-        metrics: { typecheck: 0, client_tests: 0, e2e: 1 },
-        message: `E2E tests failed (blocking):\n${e2e.stderr || e2e.stdout}`,
+        artifacts: evidence?.manifestPath ? [evidence.manifestPath] : [],
+        metrics: {
+          typecheck: 0,
+          client_tests: 0,
+          e2e: 1,
+          ...(evidence && { totalTests: evidence.totalTests, passed: evidence.passed, failed: evidence.failed }),
+        },
+        message: evidence
+          ? `${evidence.failed}/${evidence.totalTests} E2E tests failed. Evidence: ${evidence.manifestPath}`
+          : `E2E tests failed (blocking):\n${e2e.stderr || e2e.stdout}`,
+        evidence,
       };
     }
 
+    const message = this.buildSuccessMessage(e2ePassed, evidence);
+
     return {
       status: "passed",
-      artifacts: [],
-      metrics: { typecheck: 0, client_tests: 0, e2e: e2ePassed ? 0 : 1 },
-      message: e2ePassed
-        ? "All tests passed."
-        : "Typecheck and client tests passed. E2E failures recorded (non-blocking).",
+      artifacts: evidence?.manifestPath ? [evidence.manifestPath] : [],
+      metrics: {
+        typecheck: 0,
+        client_tests: 0,
+        e2e: e2ePassed ? 0 : 1,
+        ...(evidence && { totalTests: evidence.totalTests, passed: evidence.passed, failed: evidence.failed }),
+      },
+      message,
+      evidence,
     };
   }
 }

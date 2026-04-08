@@ -33,4 +33,12 @@ describe("E2eGreenStep", () => {
     expect(result.status).toBe("failed");
     expect(result.message).toContain("E2E tests failed");
   });
+
+  it("populates evidence field after e2e run", async () => {
+    const exec = vi.fn(async () => ({ exitCode: 1, stdout: "", stderr: "3 failed", timedOut: false }));
+    const ctx = makeMockContext({ exec });
+    const step = new E2eGreenStep(makeDefinition());
+    const result = await step.execute(ctx);
+    expect(result).toHaveProperty("evidence");
+  });
 });
