@@ -12,12 +12,24 @@ You approve at every gate: the build plan, each wave's audit results, visual bas
 
 ## Quick start
 
+From your workspace root (the directory you open Claude Code in):
+
 ```sh
-# 1. Clone and install
+# 1. Clone — the target directory name matters, don't change it
 git clone https://github.com/Jakemo136/frontend-orchestrator.git \
   .claude/plugins/frontend-orchestration
+
+# 2. Install dependencies + Playwright browsers
 .claude/plugins/frontend-orchestration/setup.sh
 ```
+
+The plugin **must** live at `.claude/plugins/frontend-orchestration/` relative to your workspace root. Not `~/.claude/plugins/`, not `frontend-orchestrator/` — the exact path above.
+
+After install:
+1. Restart Claude Code (quit and reopen, or start a new session)
+2. Run `/plugins` to see the plugin list
+3. Enable **frontend-orchestration** if it isn't already
+4. Verify with `/session-start` — if it responds, you're good
 
 Then create `orchestrator.config.yaml` in your project root — edit the values to match your project:
 
