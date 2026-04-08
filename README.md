@@ -1,49 +1,32 @@
-# Frontend Orchestration Plugin
+# Frontend Orchestration
 
-A Claude Code plugin that manages the full lifecycle of building frontend components — from requirements gathering through tested, audited pull requests.
+A Claude Code plugin that builds your entire frontend from a conversation. You describe what you want, it interviews you, writes tests, builds components, audits everything, and opens PRs — all in dependency order, all TDD, all with your approval at every gate.
 
-## How to use
+## What to expect
 
-Start with `/ui-interview`. The plugin will ask about what you're building: pages, components, data requirements, user flows, edge cases. Everything it builds afterward is driven by your answers, so come in with a clear picture of what you want. The more specific you are, the better the output.
+You start by talking. `/ui-interview` asks about your pages, components, data flows, user stories, and edge cases. Be specific — everything it builds comes from what you say here.
 
-Once requirements are locked, use `/build-page` or `/build-pipeline` to kick off the build. The plugin follows strict TDD — it writes tests first, then builds components to pass them. If a test fails, it fixes the component, never the test.
+Then it builds. `/build-pipeline` resolves your components into dependency waves (leaf nodes first, composites after), writes failing E2E and unit tests, builds each component to make the tests pass, and never touches a test to make it green. Each wave gets code review, code simplification, design audit, and a11y audit before PRs are opened.
 
-Components are built in waves based on dependency order. Leaf components (buttons, inputs, cards) go first. Components that compose those come next, and so on up the tree. Each wave goes through code review, design audit (`/design-audit`), and accessibility audit before any PRs are opened.
+You approve at every gate: the build plan, each wave's audit results, visual baseline promotion, and merging. Nothing ships without you saying so.
 
-You stay in control throughout. The plugin pauses for your approval at key points: the build plan, audit results, baseline promotion (`/set-baseline`), and merging. Nothing gets merged without you saying so.
+## Quick start
 
-For smaller tasks, `/build-component` lets you build a single component TDD-style. `/review-requirements` gives you a summary of where the build stands and what to do next. `/visual-qa` runs a UX quality review after the design audit passes. `/session-start` reorients the plugin at the beginning of a new session.
+```sh
+# 1. Clone into your workspace
+git clone https://github.com/Jakemo136/frontend-orchestrator.git \
+  .claude/plugins/frontend-orchestration
 
-## Setup
+# 2. Install dependencies
+cd .claude/plugins/frontend-orchestration/runner && npm install
+cd ../mcp/a11y-scanner && npm install
+cd ../screenshot-review && npm install
 
-### Prerequisites
+# 3. Install browsers
+npx playwright install chromium
 
-- Node.js 20+
-- Claude Code CLI
-
-### Installation
-
-1. Clone or copy the plugin to `.claude/plugins/frontend-orchestration/` in your workspace.
-
-2. Install dependencies in three directories:
-
-   ```
-   cd .claude/plugins/frontend-orchestration/runner && npm install
-   cd .claude/plugins/frontend-orchestration/mcp/a11y-scanner && npm install
-   cd .claude/plugins/frontend-orchestration/mcp/screenshot-review && npm install
-   ```
-
-3. Install Playwright browsers:
-
-   ```
-   npx playwright install chromium
-   ```
-
-### Project config
-
-Create `orchestrator.config.yaml` in your project root, or run `orchestrate init` to generate one interactively. Minimal example:
-
-```yaml
+# 4. Create project config
+cd /your/project && cat > orchestrator.config.yaml << 'YAML'
 project: my-app
 scope:
   type: app
@@ -69,20 +52,66 @@ ci:
   required_on_main: [client, e2e]
   required_on_feature: [client]
   informational_on_feature: [e2e]
+YAML
 ```
-
-### MCP servers
-
-The plugin registers `a11y-scanner` and `screenshot-review` MCP servers through `plugin.json`. Claude Code should discover them automatically when the plugin is loaded. If they don't appear, verify the plugin is loaded in your Claude Code settings.
 
 ## Commands
 
-- `/session-start` — reorient at the start of a session
-- `/ui-interview` — requirements interview, produces UI_REQUIREMENTS.md and COMPONENT_INVENTORY.md
-- `/build-component [Name]` — build one component TDD-style
-- `/build-page [PageName]` — build all components for a page, parallelized by wave
-- `/build-pipeline` — fully autonomous frontend build with E2E
-- `/review-requirements` — summarize build state, suggest next step
-- `/design-audit [route?]` — accessibility and design audit at all breakpoints
-- `/visual-qa [route?]` — UX quality review (run after /design-audit)
-- `/set-baseline [route?]` — promote screenshots to visual regression baseline
+| Command | What it does |
+|---|---|
+| `/session-start` | Reorient at the start of a session |
+| `/ui-interview` | Requirements interview — produces UI_REQUIREMENTS.md and COMPONENT_INVENTORY.md |
+| `/build-component [Name]` | Build one component TDD-style |
+| `/build-page [Page]` | Build all components for a page, parallelized by dependency wave |
+| `/build-pipeline` | Full autonomous build: E2E tests, dependency waves, audits, PRs |
+| `/review-requirements` | Summarize build state, suggest next step |
+| `/design-audit [route?]` | A11y + design audit at all breakpoints, auto-fix critical issues |
+| `/visual-qa [route?]` | UX quality review — Nielsen's heuristics, Gestalt, frustration signals |
+| `/set-baseline [route?]` | Promote screenshots to visual regression baseline |
+
+## How it works
+
+```
+/ui-interview
+    |
+    v
+UI_REQUIREMENTS.md + COMPONENT_INVENTORY.md
+    |
+    v
+/build-pipeline
+    |
+    +---> Phase 1: E2E tests written (must fail initially)
+    +---> Phase 2: Components grouped into dependency waves
+    +---> Phase 3: Each wave built TDD, reviewed, audited, PR'd
+    +---> Phase 4: E2E green, design audit, visual QA, baseline
+    +---> Phase 5: Final review, merge to main
+```
+
+Each phase gates on the previous. The pipeline can resume from any checkpoint.
+
+## What's inside
+
+```
+frontend-orchestration/
+  commands/       9 plugin commands (the slash commands above)
+  subagents/      8 specialized agents (component-builder, e2e-writer, etc.)
+  runner/         DAG executor — state machine, evidence pipeline, step implementations
+  mcp/            2 MCP servers (a11y-scanner, screenshot-review)
+  standards/      Design, a11y, and UX quality checklists
+  setup/          Recommended hooks and install guide
+```
+
+## Evidence pipeline
+
+When E2E tests run, the orchestrator collects structured failure evidence:
+
+- Playwright traces (`.zip` — open with `npx playwright show-trace`)
+- Failure screenshots
+- Machine-readable `evidence-manifest.json` per test run
+
+Evidence is persisted to `.orchestrator/evidence/` and referenced in step results. See `setup/` for CI artifact upload patterns.
+
+## Requirements
+
+- Node.js 20+
+- Claude Code
