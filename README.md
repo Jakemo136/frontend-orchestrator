@@ -115,7 +115,9 @@ The design audit and a11y steps aren't an LLM squinting at code and guessing. Th
 
 **Layer 5: Auto-fix with re-verification.** When the audit finds Critical or Major issues, it fixes them and re-runs the entire audit — axe-core scan, fresh screenshots, visual review. The fix isn't done until the re-scan confirms resolution. Minor issues are flagged for human review, never auto-fixed.
 
-The confidence comes from the stack: machine-verified a11y, real browser renders, structured visual review, codified standards, and re-verification after fixes. No single layer is sufficient alone, but together they catch categories of issues that code review misses.
+**UX quality review (`/visual-qa`) — a separate pass with a different lens.** The design audit catches "is this built correctly?" The UX quality review asks "does this feel right to use?" It evaluates against Nielsen's 10 usability heuristics (system status visibility, error prevention, recognition over recall, etc.), Gestalt principles (proximity, similarity, continuity), interaction quality (44x44px touch targets, affordances, form UX, perceived performance), and 10 specific frustration signals — dead clicks, mystery meat navigation, data loss risk, forced detours, ambiguous actions, silent failures, jarring transitions, cognitive overload, inconsistent behavior, and broken expectations. Run it after `/design-audit` passes — a11y compliance first, then UX.
+
+The confidence comes from the stack: machine-verified a11y, real browser renders, structured visual review, codified standards, heuristic UX evaluation, and re-verification after fixes. No single layer is sufficient alone, but together they catch categories of issues that code review misses.
 
 ## Evidence pipeline
 
