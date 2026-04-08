@@ -101,6 +101,22 @@ frontend-orchestration/
   setup/          Recommended hooks and install guide
 ```
 
+## Why the audits are trustworthy
+
+The design audit and a11y steps aren't an LLM squinting at code and guessing. They're layered: automated tooling produces hard data, then agents review what the tools can't catch.
+
+**Layer 1: axe-core (machine, not vibes).** The a11y-scanner MCP server launches a real Chromium browser, navigates to your running app, and runs [axe-core](https://github.com/dequelabs/axe-core) against the live DOM. axe-core is the industry standard — it powers the accessibility checks in Chrome DevTools, Lighthouse, and most enterprise a11y workflows. When it reports a WCAG 2.2 AA violation, that's a real DOM element failing a real WCAG success criterion, not an inference.
+
+**Layer 2: Screenshots at four breakpoints (evidence, not assumptions).** The screenshot-review MCP server captures full-page screenshots at 375px, 768px, 1280px, and 1440px. These are real renders from a real browser — layout issues, overflow, clipping, and responsive breakage show up as visual artifacts, not as code-pattern guesses.
+
+**Layer 3: Visual composition review (structured, not freeform).** After the automated tools run, the design-auditor agent reviews every screenshot against a specific checklist: duplicate elements, visual hierarchy, alignment, navigation consistency, empty states. It's looking at actual screenshots, not source code, and it's told to evaluate like a first-time user — flag anything confusing, not check boxes.
+
+**Layer 4: Codified standards.** The audit checklists in `standards/design-and-a11y.md` and `standards/ux-quality.md` are concrete and enumerated — WCAG 2.2 AA conformance targets, Nielsen's 10 heuristics, Gestalt principles, interactive state requirements (hover/focus/active/disabled), contrast ratios (4.5:1 text, 3:1 non-text UI), touch targets (44x44px), and 10 specific frustration signals (dead clicks, mystery meat navigation, data loss, silent failures, etc.). The agents audit against these standards, not against their own opinions.
+
+**Layer 5: Auto-fix with re-verification.** When the audit finds Critical or Major issues, it fixes them and re-runs the entire audit — axe-core scan, fresh screenshots, visual review. The fix isn't done until the re-scan confirms resolution. Minor issues are flagged for human review, never auto-fixed.
+
+The confidence comes from the stack: machine-verified a11y, real browser renders, structured visual review, codified standards, and re-verification after fixes. No single layer is sufficient alone, but together they catch categories of issues that code review misses.
+
 ## Evidence pipeline
 
 When E2E tests run, the orchestrator collects structured failure evidence:
