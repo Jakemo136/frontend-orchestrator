@@ -54,6 +54,7 @@ export class StateManager {
       artifacts: result.artifacts,
       metrics: result.metrics,
       message: result.message,
+      evidence: result.evidence,
     };
   }
 }

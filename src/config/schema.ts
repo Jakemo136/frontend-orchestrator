@@ -7,6 +7,13 @@ const pipelineScopeSchema = z.object({
   target: z.string().nullable(),
 });
 
+const evidenceConfigSchema = z.object({
+  playwright_config: z.string().default("playwright.config.ts"),
+  output_dir: z.string().default("test-results"),
+  json_report: z.string().default("test-results/results.json"),
+  collect_to: z.string().default(".orchestrator/evidence"),
+});
+
 const stepDefinitionSchema = z.object({
   id: z.string().min(1),
   type: z.string().min(1),
@@ -42,6 +49,7 @@ export const configSchema = z.object({
     required_on_feature: z.array(z.string()),
     informational_on_feature: z.array(z.string()),
   }),
+  evidence: evidenceConfigSchema.default({}),
   steps: z.array(stepDefinitionSchema).optional(),
 });
 

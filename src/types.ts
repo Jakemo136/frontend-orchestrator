@@ -1,3 +1,5 @@
+import type { EvidenceConfig, EvidenceSummary } from "./evidence/types.js";
+
 // ─── Scope ───────────────────────────────────────────
 
 export const SCOPE_ORDER = ["component", "feature", "page", "app"] as const;
@@ -45,6 +47,7 @@ export interface OrchestratorConfig {
     required_on_feature: string[];
     informational_on_feature: string[];
   };
+  evidence: EvidenceConfig;
   steps?: StepDefinition[];
 }
 
@@ -64,6 +67,7 @@ export interface StepResult {
   artifacts: string[];
   metrics: Record<string, number>;
   message: string;
+  evidence?: EvidenceSummary;
 }
 
 // ─── Step Description (for --explain) ────────────────
@@ -142,6 +146,7 @@ export interface StepState {
   artifacts: string[];
   metrics: Record<string, number>;
   message: string;
+  evidence?: EvidenceSummary;
 }
 
 export interface WorkflowState {

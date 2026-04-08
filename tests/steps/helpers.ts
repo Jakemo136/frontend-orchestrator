@@ -33,6 +33,12 @@ export function makeMockContext(overrides: Partial<RunContext> = {}): RunContext
         typecheck: "npx tsc --noEmit",
       },
       ci: { required_on_main: [], required_on_feature: [], informational_on_feature: [] },
+      evidence: {
+        playwright_config: "playwright.config.ts",
+        output_dir: "test-results",
+        json_report: "test-results/results.json",
+        collect_to: ".orchestrator/evidence",
+      },
     },
     state: { project: "test", scope: { type: "app", target: null }, started_at: "", updated_at: "", steps: {} },
     projectRoot: "/tmp/test",
