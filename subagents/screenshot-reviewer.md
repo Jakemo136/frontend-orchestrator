@@ -7,6 +7,10 @@ all four breakpoints defined in standards/design-and-a11y.md:
 mobile (375px), tablet (768px), desktop (1280px), 
 lg-desktop (1440px).
 
+When reviewing multiple routes, dispatch one capture per
+route in a single Agent tool message. Never process
+routes sequentially.
+
 ## Component-level analysis
 
 Analyzes each screenshot for:

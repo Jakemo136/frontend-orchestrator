@@ -19,13 +19,14 @@ Protocol:
    each wave
 
 Wave execution per wave:
-- Spin up one component-builder subagent per component
-- Run all subagents in the wave in parallel
-- Wait for all to complete before starting next wave
+- Dispatch all component-builder subagents for the wave
+  in a single Agent tool message — one per component,
+  all in parallel. Never build components sequentially.
+- Wait for all to complete before starting next wave.
 - After each wave: run E2E suite, log results to
-  BUILD_STATUS.md
+  BUILD_STATUS.md.
 - If any component fails: stop, surface failure, wait
-  for user direction
+  for user direction.
 
 On completion:
 - Run full RTL suite — all must pass

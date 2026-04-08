@@ -8,28 +8,20 @@ Fully autonomous parallelized build of the entire frontend.
 Requires /docs/UI_REQUIREMENTS.md and
 /docs/COMPONENT_INVENTORY.md to exist and be approved.
 
-Phase 1 — E2E Test Generation
-Invoke e2e-writer subagent to write Playwright tests for
-every user flow in UI_REQUIREMENTS.md before any components
-are built.
+Phase 1 + 2 — E2E Tests AND Dependency Resolution (PARALLEL)
+These two phases are independent. Dispatch both as subagents
+in a single Agent tool message:
 
-One test file per major flow, saved to /client/e2e/:
-- auth.e2e.ts
-- upload.e2e.ts
-- roast-detail.e2e.ts (or equivalent for this project)
-- comparison.e2e.ts
-- sharing.e2e.ts
+Subagent A: e2e-writer
+- Write Playwright tests for every user flow in
+  UI_REQUIREMENTS.md before any components are built
+- One test file per major flow, saved to /client/e2e/
+- Each test must follow exact user flow narrative, assert
+  on visible UI elements, never be modified to pass, use
+  realistic data via MSW or test DB
+- Run all E2E tests. Confirm they fail. Log to BUILD_STATUS.md.
 
-Each test must:
-- Follow exact user flow narrative in UI_REQUIREMENTS.md
-- Assert on visible UI elements and user-facing outcomes
-- Never be modified to pass — components are fixed instead
-- Use realistic data via MSW or test DB
-
-Run all E2E tests. Confirm they fail. Log to BUILD_STATUS.md.
-
-Phase 2 — Dependency Graph Resolution
-Invoke dependency-resolver subagent to:
+Subagent B: dependency-resolver
 - Read COMPONENT_INVENTORY.md
 - Group all components into build waves
 - Wave 0: no dependencies
@@ -37,13 +29,15 @@ Invoke dependency-resolver subagent to:
 - Flag circular dependencies as errors
 - Write full wave plan to /docs/BUILD_PLAN.md
 
+Wait for both to complete before proceeding.
 Present BUILD_PLAN.md to user. Wait for explicit approval
 before Phase 3.
 
 Phase 3 — Parallel Build by Wave
 Invoke wave-executor subagent for each wave in sequence.
-Within each wave, spin up parallel component-builder
-subagents — one per component.
+Within each wave, dispatch all component-builder subagents
+in a single Agent tool message — one per component, all
+in parallel. Never build components one at a time.
 
 After each wave:
 - Run full RTL suite

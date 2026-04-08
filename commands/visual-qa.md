@@ -21,24 +21,29 @@ Before running, read both standards files:
 Requires dev server to be running. If not running,
 instruct user to start it before proceeding.
 
-## Phase 1: Screenshot capture
+## Phase 1: Screenshot capture (parallel per route)
 
 Capture all routes at all 4 breakpoints using the
 screenshot-review MCP tool (or Playwright fallback).
+If multiple routes, dispatch one subagent per route
+in a single Agent tool message — all in parallel.
 
-## Phase 2: Visual composition review
+## Phase 2: Visual composition review (parallel per route)
 
-For each route at each breakpoint, perform the
+For each route, dispatch a subagent to perform the
 discovery-oriented visual review defined in
-standards/design-and-a11y.md under "Visual
-Composition". This catches structural issues like
-duplicate elements, misalignment, broken layouts.
+standards/design-and-a11y.md under "Visual Composition".
+Dispatch all in a single Agent tool message — one subagent
+per route. Each subagent reviews all 4 breakpoints for its
+route. This catches structural issues like duplicate elements,
+misalignment, broken layouts.
 
-## Phase 3: UX quality evaluation
+## Phase 3: UX quality evaluation (parallel per route)
 
-Using the captured screenshots AND the live app,
-evaluate against every section in
-standards/ux-quality.md:
+For each route, dispatch a subagent to evaluate against
+every section in standards/ux-quality.md. Dispatch all
+in a single Agent tool message — one subagent per route.
+Each subagent evaluates:
 
 1. **Nielsen's 10 Heuristics** (H1-H10)
    - Walk each heuristic against every route
@@ -71,10 +76,11 @@ standards/ux-quality.md:
    - For each signal found, describe what would
      frustrate the user and why
 
-## Phase 4: Interactive testing
+## Phase 4: Interactive testing (parallel per route)
 
 For routes that can be tested interactively (via
-Playwright or browser automation):
+Playwright or browser automation), dispatch all subagents
+in a single Agent tool message — one per route:
 
 - Click every interactive element — does it
   respond with visible feedback?

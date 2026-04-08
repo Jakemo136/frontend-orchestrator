@@ -16,11 +16,14 @@ instruct user to start it before proceeding.
 
 ## Phase 1: Automated checks (parallel)
 
-Spin up subagents in parallel:
+Dispatch all three subagents in a single Agent tool message:
 - design-auditor for static analysis
 - a11y-scanner for axe-core scan (via Playwright if
   MCP tool fails)
 - screenshot-reviewer for visual capture at all breakpoints
+
+These are independent and must run in parallel to avoid
+context bloat. Never run them sequentially.
 
 ## Phase 2: Visual composition review (after Phase 1)
 

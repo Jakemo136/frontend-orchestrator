@@ -33,14 +33,19 @@ Write if the project needs pre-test setup that runs once:
 
 Skip this file if the dev server handles everything.
 
-## Test files
+## Test files (parallel per flow)
 
-For each user flow narrative in UI_REQUIREMENTS.md:
+Write test infrastructure (fixtures.ts, global-setup.ts)
+first — these must exist before any test files.
 
-1. Identify the discrete steps a user takes
-2. Write a Playwright test that follows those exact steps
-3. Assert on visible outcomes the user would see
-4. Save to `client/e2e/[flow-name].e2e.ts`
+Then dispatch all test file writes in a single Agent tool
+message — one subagent per user flow. Never write test files
+sequentially. Each subagent:
+
+1. Identifies the discrete steps the user takes
+2. Writes a Playwright test that follows those exact steps
+3. Asserts on visible outcomes the user would see
+4. Saves to `client/e2e/[flow-name].e2e.ts`
 
 ## Patterns enforced in every test file
 

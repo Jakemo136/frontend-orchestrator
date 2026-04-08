@@ -18,6 +18,13 @@ This is not a checklist pass. Look at the page as a
 whole before checking individual items. Trust your
 gut — if something feels off, flag it and explain why.
 
+## Parallelization
+
+When reviewing multiple routes, dispatch all subagents in
+a single Agent tool message — one per route. Each subagent
+runs the full evaluation sequence below for its assigned
+route. Never review routes one at a time.
+
 ## Evaluation sequence
 
 ### 1. First impression (5-second test)

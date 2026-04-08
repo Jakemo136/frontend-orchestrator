@@ -8,11 +8,16 @@ the frontend-orchestration plugin for the full checklist
 and breakpoint definitions.
 
 Executes all four audit phases:
-1. Static analysis against Design Audit Checklist
-2. Axe-core scan via a11y-scanner MCP tool
-3. Screenshot capture via screenshot-review MCP tool
-   at all four breakpoints: mobile, tablet, desktop, lgDesktop
-4. Consolidated report written to /docs/DESIGN_AUDIT.md
+1. Dispatch all three checks in a single Agent tool message:
+   a. Static analysis against Design Audit Checklist
+   b. Axe-core scan via a11y-scanner MCP tool
+   c. Screenshot capture via screenshot-review MCP tool
+      at all four breakpoints: mobile, tablet, desktop, lgDesktop
+   When auditing multiple routes, dispatch one subagent
+   per route within each check — never process routes
+   sequentially.
+2. After all three complete: consolidated report written
+   to /docs/DESIGN_AUDIT.md
 
 Reports back to orchestrator:
 - Count of critical, major, minor violations found
