@@ -12,6 +12,7 @@ import type {
   ExecResult,
   CommandResult,
   StepResult,
+  NeedsCommandSignal,
 } from "../types.js";
 
 const execAsync = promisify(execCb);
@@ -21,6 +22,7 @@ export function createRunContext(
   state: WorkflowState,
   projectRoot: string,
   stateManager: StateManager,
+  commandResults?: Map<string, CommandResult>,
 ): RunContext {
   return {
     config,
@@ -50,25 +52,25 @@ export function createRunContext(
         });
         return { exitCode: 0, stdout, stderr, timedOut: false };
       } catch (err: unknown) {
-        const e = err as { code?: number; stdout?: string; stderr?: string; killed?: boolean };
-        return {
-          exitCode: e.code ?? 1,
-          stdout: e.stdout ?? "",
-          stderr: e.stderr ?? "",
-          timedOut: e.killed === true,
-        };
+        if (typeof err === "object" && err !== null) {
+          const e = err as Record<string, unknown>;
+          return {
+            exitCode: typeof e.code === "number" ? e.code : 1,
+            stdout: typeof e.stdout === "string" ? e.stdout : "",
+            stderr: typeof e.stderr === "string" ? e.stderr : "",
+            timedOut: e.killed === true,
+          };
+        }
+        return { exitCode: 1, stdout: "", stderr: "", timedOut: false };
       }
     },
 
     async invokeCommand(command: string, args?: string): Promise<CommandResult> {
-      // Plugin commands are invoked through Claude Code's skill system.
-      // Placeholder — wired at integration time.
-      return {
-        success: false,
-        output: "",
-        artifacts: [],
-        error: `invokeCommand not yet wired: ${command} ${args ?? ""}`,
-      };
+      const key = args ? `${command} ${args}` : command;
+      const existing = commandResults?.get(key);
+      if (existing) return existing;
+
+      throw { __type: "needs_command", command, args } satisfies NeedsCommandSignal;
     },
 
     async awaitApproval(prompt: string): Promise<void> {

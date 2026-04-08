@@ -6,6 +6,7 @@ import { formatExplain } from "./explain/explain.js";
 import { getStepClass } from "./steps/registry.js";
 import { writeFileSync, existsSync } from "fs";
 import { join } from "path";
+import type { CommandResult } from "./types.js";
 
 // Import all steps to trigger registration
 import "./steps/session-start.js";
@@ -29,26 +30,51 @@ import "./steps/user-story-generation.js";
 export interface ParsedCommand {
   command: "run" | "status" | "explain" | "run-step" | "reset" | "init";
   stepId?: string;
+  commandResults?: Map<string, CommandResult>;
 }
 
 export function parseArgs(args: string[]): ParsedCommand {
-  if (args.length === 0) return { command: "run" };
+  const commandResults = new Map<string, CommandResult>();
 
-  const first = args[0]!;
+  // Extract --command-result flags before parsing command
+  const filtered: string[] = [];
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === "--command-result" && args[i + 1]) {
+      const arg = args[i + 1]!;
+      const eqIndex = arg.indexOf("=");
+      if (eqIndex > 0) {
+        const key = arg.slice(0, eqIndex);
+        const b64 = arg.slice(eqIndex + 1);
+        try {
+          const result = JSON.parse(Buffer.from(b64, "base64").toString("utf-8")) as CommandResult;
+          commandResults.set(key, result);
+        } catch {
+          // Skip malformed results
+        }
+      }
+      i++; // skip the value arg
+    } else {
+      filtered.push(args[i]!);
+    }
+  }
+
+  if (filtered.length === 0) return { command: "run", commandResults };
+
+  const first = filtered[0]!;
 
   if (first === "--explain") return { command: "explain" };
   if (first === "status") return { command: "status" };
   if (first === "init") return { command: "init" };
 
-  if (first === "run" && args[1]) {
-    return { command: "run-step", stepId: args[1] };
+  if (first === "run" && filtered[1]) {
+    return { command: "run-step", stepId: filtered[1], commandResults };
   }
 
-  if (first === "reset" && args[1]) {
-    return { command: "reset", stepId: args[1] };
+  if (first === "reset" && filtered[1]) {
+    return { command: "reset", stepId: filtered[1] };
   }
 
-  return { command: "run" };
+  return { command: "run", commandResults };
 }
 
 const TEMPLATE_CONFIG = `# orchestrator.config.yaml
@@ -92,11 +118,11 @@ async function main() {
     case "init": {
       const configPath = join(projectRoot, "orchestrator.config.yaml");
       if (existsSync(configPath)) {
-        console.error("orchestrator.config.yaml already exists");
+        process.stderr.write("orchestrator.config.yaml already exists\n");
         process.exit(1);
       }
       writeFileSync(configPath, TEMPLATE_CONFIG);
-      console.log("Created orchestrator.config.yaml");
+      process.stdout.write("Created orchestrator.config.yaml\n");
       break;
     }
 
@@ -143,25 +169,19 @@ async function main() {
     case "run": {
       const config = loadConfig(projectRoot);
       const steps = config.steps ?? generateDefaultPipeline(config);
-      const executor = new Executor(config, steps, projectRoot);
+      const executor = new Executor(config, steps, projectRoot, cmd.commandResults);
+      const output = await executor.runNext();
+      process.stdout.write(JSON.stringify(output) + "\n");
 
-      let result = await executor.runNext();
-      while (result) {
-        const icon = result.result.status === "passed" ? "✓" : result.result.status === "skipped" ? "~" : "✗";
-        console.log(`${icon} ${result.stepId} — ${result.result.message}`);
-        if (result.result.status === "failed") {
-          console.error(`\nPipeline stopped. Fix the issue and run 'orchestrate' to resume.`);
-          process.exit(1);
-        }
-        result = await executor.runNext();
+      if (output.type === "pipeline_failed") {
+        process.exit(1);
       }
-      console.log("\nPipeline complete (or waiting for user action).");
       break;
     }
 
     case "reset": {
       if (!cmd.stepId) {
-        console.error("Usage: orchestrate reset <step-id>");
+        process.stderr.write("Usage: orchestrate reset <step-id>\n");
         process.exit(1);
       }
       const config = loadConfig(projectRoot);
@@ -169,12 +189,31 @@ async function main() {
       const state = stateMgr.load(config.project, config.scope);
       delete state.steps[cmd.stepId];
       stateMgr.save(state);
-      console.log(`Reset step: ${cmd.stepId}`);
+      process.stdout.write(`Reset step: ${cmd.stepId}\n`);
       break;
     }
 
     case "run-step": {
-      console.log(`run-step not yet implemented (step: ${cmd.stepId})`);
+      if (!cmd.stepId) {
+        process.stderr.write("Usage: orchestrate run <step-id>\n");
+        process.exit(1);
+      }
+      const config = loadConfig(projectRoot);
+      const steps = config.steps ?? generateDefaultPipeline(config);
+      const executor = new Executor(config, steps, projectRoot, cmd.commandResults);
+
+      const runnable = steps.filter((s) => s.id === cmd.stepId);
+      if (runnable.length === 0) {
+        process.stderr.write(`Unknown step: ${cmd.stepId}\n`);
+        process.exit(1);
+      }
+
+      const output = await executor.runNext();
+      process.stdout.write(JSON.stringify(output) + "\n");
+
+      if (output.type === "pipeline_failed") {
+        process.exit(1);
+      }
       break;
     }
   }

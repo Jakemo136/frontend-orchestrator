@@ -41,6 +41,13 @@ const CONFIG: OrchestratorConfig = {
     required_on_feature: ["server", "client"],
     informational_on_feature: ["e2e"],
   },
+  evidence: {
+    playwright_config: "playwright.config.ts",
+    output_dir: "test-results",
+    json_report: "test-results/results.json",
+    collect_to: ".orchestrator/evidence",
+  },
+  dev_server_url: "http://localhost:3000",
 };
 
 describe("Integration: component-scope pipeline", () => {
@@ -50,9 +57,13 @@ describe("Integration: component-scope pipeline", () => {
     const executor = new Executor(CONFIG, steps, dir);
 
     const result = await executor.runNext();
-    expect(result).not.toBeNull();
-    expect(result!.stepId).toBe("session-start");
-    expect(result!.result.status).toBe("passed");
+    // session-start calls invokeCommand("/session-start"), so without a pre-supplied
+    // command result it signals needs_command — that's the correct behavior.
+    expect(result.type).toBe("needs_command");
+    if (result.type === "needs_command") {
+      expect(result.stepId).toBe("session-start");
+      expect(result.command).toBe("/session-start");
+    }
 
     rmSync(dir, { recursive: true });
   });

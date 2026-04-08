@@ -33,4 +33,18 @@ describe("parseArgs", () => {
     const cmd = parseArgs(["init"]);
     expect(cmd.command).toBe("init");
   });
+
+  it("parses --command-result flag", () => {
+    const encoded = Buffer.from(JSON.stringify({ success: true, output: "ok", artifacts: [] })).toString("base64");
+    const cmd = parseArgs(["--command-result", `/test=${encoded}`]);
+    expect(cmd.command).toBe("run");
+    expect(cmd.commandResults?.get("/test")).toBeDefined();
+    expect(cmd.commandResults?.get("/test")?.success).toBe(true);
+  });
+
+  it("ignores malformed --command-result", () => {
+    const cmd = parseArgs(["--command-result", "/test=notbase64json"]);
+    expect(cmd.command).toBe("run");
+    expect(cmd.commandResults?.size).toBe(0);
+  });
 });

@@ -115,6 +115,30 @@ export interface CommandResult {
   error?: string;
 }
 
+// ─── Command Signal ─────────────────────────────────
+export interface NeedsCommandSignal {
+  __type: "needs_command";
+  command: string;
+  args?: string;
+}
+
+export function isNeedsCommandSignal(err: unknown): err is NeedsCommandSignal {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "__type" in err &&
+    "command" in err &&
+    (err as NeedsCommandSignal).__type === "needs_command"
+  );
+}
+
+// ─── Runner Output ──────────────────────────────────
+export type RunnerOutput =
+  | { type: "step_complete"; stepId: string; result: StepResult; nextStepId: string | null }
+  | { type: "needs_command"; stepId: string; command: string; args?: string }
+  | { type: "pipeline_done" }
+  | { type: "pipeline_failed"; stepId: string; result: StepResult };
+
 // ─── Run Context ─────────────────────────────────────
 
 export interface RunContext {

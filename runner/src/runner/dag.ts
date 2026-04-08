@@ -48,7 +48,7 @@ export function topologicalSort(steps: StepDefinition[]): StepDefinition[] {
 
 /**
  * Returns steps whose dependencies are all satisfied (passed or skipped)
- * and that haven't started yet.
+ * and that haven't started yet or are in_progress (resumable after needs_command).
  */
 export function getRunnable(
   steps: StepDefinition[],
@@ -58,7 +58,7 @@ export function getRunnable(
 
   return steps.filter((step) => {
     const stepState = state.steps[step.id];
-    if (stepState) return false;
+    if (stepState && stepState.status !== "in_progress") return false;
 
     return step.deps.every((dep) => {
       const depState = state.steps[dep];

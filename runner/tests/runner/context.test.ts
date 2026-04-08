@@ -38,6 +38,13 @@ const CONFIG: OrchestratorConfig = {
     required_on_feature: [],
     informational_on_feature: [],
   },
+  evidence: {
+    playwright_config: "playwright.config.ts",
+    output_dir: "test-results",
+    json_report: "test-results/results.json",
+    collect_to: ".orchestrator/evidence",
+  },
+  dev_server_url: "http://localhost:3000",
 };
 
 describe("RunContext", () => {
@@ -81,6 +88,36 @@ describe("RunContext", () => {
     const ctx = createRunContext(CONFIG, state, dir, stateMgr);
     const result = await ctx.exec("exit 1");
     expect(result.exitCode).toBe(1);
+    rmSync(dir, { recursive: true });
+  });
+
+  it("invokeCommand throws NeedsCommandSignal when no result pre-supplied", async () => {
+    const dir = makeTempProject();
+    const stateMgr = new StateManager(dir);
+    const state = stateMgr.load("test", CONFIG.scope);
+    const ctx = createRunContext(CONFIG, state, dir, stateMgr);
+
+    try {
+      await ctx.invokeCommand("/some-command");
+      expect.fail("Should have thrown");
+    } catch (err) {
+      expect((err as any).__type).toBe("needs_command");
+      expect((err as any).command).toBe("/some-command");
+    }
+    rmSync(dir, { recursive: true });
+  });
+
+  it("invokeCommand returns pre-supplied result when available", async () => {
+    const dir = makeTempProject();
+    const stateMgr = new StateManager(dir);
+    const state = stateMgr.load("test", CONFIG.scope);
+    const commandResults = new Map();
+    commandResults.set("/some-command", { success: true, output: "ok", artifacts: [] });
+    const ctx = createRunContext(CONFIG, state, dir, stateMgr, commandResults);
+
+    const result = await ctx.invokeCommand("/some-command");
+    expect(result.success).toBe(true);
+    expect(result.output).toBe("ok");
     rmSync(dir, { recursive: true });
   });
 });

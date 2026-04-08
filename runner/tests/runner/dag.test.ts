@@ -78,7 +78,7 @@ describe("getRunnable", () => {
     expect(runnable.map((s) => s.id)).toEqual(["b"]);
   });
 
-  it("does not return steps that are in_progress or already passed", () => {
+  it("does not return passed steps but allows in_progress steps to resume", () => {
     const state: WorkflowState = {
       project: "test",
       scope: { type: "app", target: null },
@@ -90,6 +90,7 @@ describe("getRunnable", () => {
       },
     };
     const runnable = getRunnable(STEPS, state);
-    expect(runnable).toHaveLength(0);
+    expect(runnable).toHaveLength(1);
+    expect(runnable[0]!.id).toBe("b");
   });
 });
