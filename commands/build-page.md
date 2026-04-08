@@ -23,6 +23,9 @@ Wave execution per wave:
   in a single Agent tool message — one per component,
   all in parallel. Never build components sequentially.
 - Wait for all to complete before starting next wave.
+- Condense all component-builder results into a single
+  summary: which passed, which failed, key issues.
+  Do NOT relay each subagent's full report verbatim.
 - After each wave: run E2E suite, log results to
   BUILD_STATUS.md.
 - If any component fails: stop, surface failure, wait

@@ -25,6 +25,11 @@ Dispatch all three subagents in a single Agent tool message:
 These are independent and must run in parallel to avoid
 context bloat. Never run them sequentially.
 
+When subagents return, condense their results into a
+unified summary. Do NOT paste each subagent's full output
+into the conversation — extract violations by severity,
+affected routes, and screenshot paths.
+
 ## Phase 2: Visual composition review (after Phase 1)
 
 After automated checks complete and screenshots are

@@ -29,7 +29,10 @@ Subagent B: dependency-resolver
 - Flag circular dependencies as errors
 - Write full wave plan to /docs/BUILD_PLAN.md
 
-Wait for both to complete before proceeding.
+Wait for both to complete. When subagents return, do NOT
+dump their full output into the conversation. Read each
+result, extract only what matters (pass/fail, key findings,
+file paths), and present a condensed summary to the user.
 Present BUILD_PLAN.md to user. Wait for explicit approval
 before Phase 3.
 
@@ -39,7 +42,11 @@ Within each wave, dispatch all component-builder subagents
 in a single Agent tool message — one per component, all
 in parallel. Never build components one at a time.
 
-After each wave:
+After each wave, condense all component-builder results
+into a single summary: which passed, which failed, key
+issues. Do NOT relay each subagent's full report verbatim.
+
+Then:
 - Run full RTL suite
 - Run full E2E suite
 - Log results to BUILD_STATUS.md

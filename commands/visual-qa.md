@@ -95,6 +95,13 @@ in a single Agent tool message — one per route:
 - Try to break it — rapid clicks, empty submits,
   very long text inputs
 
+## Collecting results
+
+When per-route subagents return, condense all results into
+a unified report. Do NOT paste each subagent's full output
+into the conversation — extract findings by severity, merge
+duplicates across routes, and present a single summary.
+
 ## Report: /docs/VISUAL_QA.md
 
 Organize findings by severity:
