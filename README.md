@@ -19,17 +19,17 @@ From your workspace root (the directory you open Claude Code in):
 git clone https://github.com/Jakemo136/frontend-orchestrator.git \
   .claude/plugins/frontend-orchestration
 
-# 2. Install dependencies + Playwright browsers
+# 2. Install deps, browsers, and register commands
 .claude/plugins/frontend-orchestration/setup.sh
 ```
 
 The plugin **must** live at `.claude/plugins/frontend-orchestration/` relative to your workspace root. Not `~/.claude/plugins/`, not `frontend-orchestrator/` — the exact path above.
 
+The setup script installs dependencies, Playwright browsers, and creates a symlink at `.claude/commands/frontend-orchestration/` so Claude Code can discover the slash commands. (Claude Code only finds commands in `.claude/commands/`, not inside plugin directories.)
+
 After install:
 1. Restart Claude Code (quit and reopen, or start a new session)
-2. Run `/plugins` to see the plugin list
-3. Enable **frontend-orchestration** if it isn't already
-4. Verify with `/session-start` — if it responds, you're good
+2. Verify with `/session-start` — if it responds, you're good
 
 Then create `orchestrator.config.yaml` in your project root — edit the values to match your project:
 
