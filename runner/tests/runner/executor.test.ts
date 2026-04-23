@@ -86,10 +86,33 @@ class CommandNeedingStep extends BaseStep {
   }
 }
 
+class ApprovalNeedingStep extends BaseStep {
+  describe(): StepDescription {
+    return {
+      id: this.definition.id,
+      type: "needs-approval",
+      summary: "Needs approval",
+      prerequisites: [],
+      artifacts: [],
+      passCondition: "approval granted",
+      failCondition: "no approval result",
+      scope: "component",
+    };
+  }
+  async preflight(): Promise<PreflightResult> {
+    return { ready: true, issues: [] };
+  }
+  async execute(ctx: RunContext): Promise<StepResult> {
+    await ctx.awaitApproval("Deploy to production?");
+    return { status: "passed", artifacts: [], metrics: {}, message: "approved" };
+  }
+}
+
 // Register test step types
 registerStep("passing", PassingStep);
 registerStep("failing-preflight", FailingPreflightStep);
 registerStep("needs-command", CommandNeedingStep);
+registerStep("needs-approval", ApprovalNeedingStep);
 
 const CONFIG: OrchestratorConfig = {
   project: "test",
@@ -282,6 +305,43 @@ describe("Executor", () => {
     expect(state.steps["pass-step"]?.status).toBe("passed");
     // Signaled step should be reverted (not in_progress)
     expect(state.steps["cmd-step"]).toBeUndefined();
+    rmSync(dir, { recursive: true });
+  });
+
+  it("runParallel returns needs_approval when a step signals approval, persists completed steps", async () => {
+    const dir = makeTempDir();
+    const steps: StepDefinition[] = [
+      { id: "approval-step", type: "needs-approval", deps: [], params: {} },
+      { id: "pass-step", type: "passing", deps: [], params: {} },
+    ];
+    const interactiveConfig: OrchestratorConfig = { ...CONFIG, approval_mode: "interactive" };
+    const executor = new Executor(interactiveConfig, steps, dir);
+    const result = await executor.runParallel();
+
+    expect(result.type).toBe("needs_approval");
+    if (result.type === "needs_approval") {
+      expect(result.prompt).toBe("Deploy to production?");
+    }
+
+    const state = executor.getState();
+    expect(state.steps["pass-step"]?.status).toBe("passed");
+    expect(state.steps["approval-step"]).toBeUndefined();
+    rmSync(dir, { recursive: true });
+  });
+
+  it("returns needs_approval when a step calls awaitApproval in interactive mode", async () => {
+    const dir = makeTempDir();
+    const steps: StepDefinition[] = [
+      { id: "step-a", type: "needs-approval", deps: [], params: {} },
+    ];
+    const interactiveConfig: OrchestratorConfig = { ...CONFIG, approval_mode: "interactive" };
+    const executor = new Executor(interactiveConfig, steps, dir);
+    const result = await executor.runNext();
+    expect(result.type).toBe("needs_approval");
+    if (result.type === "needs_approval") {
+      expect(result.stepId).toBe("step-a");
+      expect(result.prompt).toBe("Deploy to production?");
+    }
     rmSync(dir, { recursive: true });
   });
 

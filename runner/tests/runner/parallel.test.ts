@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { fanOutSteps } from "../../src/runner/parallel.js";
-import type { NeedsCommandSignal } from "../../src/types.js";
+import type { NeedsCommandSignal, NeedsApprovalSignal } from "../../src/types.js";
 
 describe("fanOutSteps", () => {
   it("runs independent steps concurrently", async () => {
@@ -116,5 +116,32 @@ describe("fanOutSteps", () => {
     expect(errResult.signal).toBeUndefined();
     expect(errResult.result.status).toBe("failed");
     expect(errResult.result.message).toContain("Uncaught error");
+  });
+
+  it("surfaces NeedsApprovalSignal as a signal on the result without crashing other tasks", async () => {
+    const signal: NeedsApprovalSignal = { __type: "needs_approval", stepId: "needs-approval", prompt: "Deploy to prod?" };
+    const tasks = [
+      {
+        id: "needs-approval",
+        run: async () => { throw signal; },
+      },
+      {
+        id: "ok",
+        run: async () => ({ status: "passed" as const, artifacts: [], metrics: {}, message: "ok" }),
+      },
+    ];
+
+    const results = await fanOutSteps(tasks);
+    expect(results).toHaveLength(2);
+
+    const signaled = results.find((r) => r.stepId === "needs-approval")!;
+    expect(signaled.signal).toBeDefined();
+    expect(signaled.signal!.__type).toBe("needs_approval");
+    expect((signaled.signal as NeedsApprovalSignal).prompt).toBe("Deploy to prod?");
+    expect(signaled.result.message).toContain("needs approval");
+
+    const passed = results.find((r) => r.stepId === "ok")!;
+    expect(passed.result.status).toBe("passed");
+    expect(passed.signal).toBeUndefined();
   });
 });

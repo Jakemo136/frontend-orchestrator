@@ -3,7 +3,7 @@ import { getRunnable } from "./dag.js";
 import { createRunContext } from "./context.js";
 import { StateManager } from "../state/state.js";
 import { getStepClass } from "../steps/registry.js";
-import { isNeedsCommandSignal } from "../types.js";
+import { isNeedsCommandSignal, isNeedsApprovalSignal } from "../types.js";
 import { fanOutSteps } from "./parallel.js";
 import type { ParallelTask } from "./parallel.js";
 import type {
@@ -24,6 +24,7 @@ export class Executor {
     private steps: StepDefinition[],
     private projectRoot: string,
     private commandResults?: Map<string, CommandResult>,
+    private approvalResults?: Map<string, boolean>,
   ) {
     this.stateManager = new StateManager(projectRoot);
     this.state = this.stateManager.load(config.project, config.scope);
@@ -64,6 +65,7 @@ export class Executor {
         this.stateManager,
         this.commandResults,
         stepDef.id,
+        this.approvalResults,
       );
 
       this.stateManager.markInProgress(this.state, stepDef.id);
@@ -104,12 +106,21 @@ export class Executor {
     }
 
     if (signaled) {
-      return {
-        type: "needs_command",
-        stepId: signaled.stepId,
-        command: signaled.signal!.command,
-        args: signaled.signal!.args,
-      };
+      if (isNeedsCommandSignal(signaled.signal)) {
+        return {
+          type: "needs_command",
+          stepId: signaled.stepId,
+          command: signaled.signal.command,
+          args: signaled.signal.args,
+        };
+      }
+      if (isNeedsApprovalSignal(signaled.signal)) {
+        return {
+          type: "needs_approval",
+          stepId: signaled.stepId,
+          prompt: signaled.signal.prompt,
+        };
+      }
     }
 
     const failed = results.find((r) => r.result.status === "failed");
@@ -170,6 +181,7 @@ export class Executor {
       this.stateManager,
       this.commandResults,
       stepDef.id,
+      this.approvalResults,
     );
 
     const preflight = await step.preflight(ctx);
@@ -199,6 +211,9 @@ export class Executor {
     } catch (err) {
       if (isNeedsCommandSignal(err)) {
         return { type: "needs_command", stepId: stepDef.id, command: err.command, args: err.args };
+      }
+      if (isNeedsApprovalSignal(err)) {
+        return { type: "needs_approval", stepId: stepDef.id, prompt: err.prompt };
       }
       throw err;
     }
