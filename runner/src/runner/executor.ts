@@ -80,6 +80,7 @@ export class Executor {
       this.projectRoot,
       this.stateManager,
       this.commandResults,
+      stepDef.id,
     );
 
     const preflight = await step.preflight(ctx);

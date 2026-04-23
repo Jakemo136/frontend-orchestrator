@@ -50,6 +50,7 @@ export interface OrchestratorConfig {
   dev_server_url: string;
   evidence: EvidenceConfig;
   steps?: StepDefinition[];
+  approval_mode?: ApprovalMode;
 }
 
 // ─── Step Definition (from config) ───────────────────
@@ -113,6 +114,17 @@ export interface CommandResult {
   output: string;
   artifacts: string[];
   error?: string;
+}
+
+// ─── Approval ────────────────────────────────────────
+
+export type ApprovalMode = "interactive" | "auto" | "ci";
+
+export interface ApprovalRecord {
+  stepId: string;
+  prompt: string;
+  mode: ApprovalMode;
+  approved_at: string;
 }
 
 // ─── Command Signal ─────────────────────────────────
@@ -181,4 +193,5 @@ export interface WorkflowState {
   updated_at: string;
   steps: Record<string, StepState>;
   artifact_hashes?: Record<string, string>;
+  approvals?: ApprovalRecord[];
 }

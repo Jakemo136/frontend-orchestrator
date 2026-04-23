@@ -4,6 +4,7 @@ import { existsSync } from "fs";
 import { exec as execCb } from "child_process";
 import { promisify } from "util";
 import { StateManager } from "../state/state.js";
+import { createApprovalHandler } from "./approval.js";
 import type {
   OrchestratorConfig,
   WorkflowState,
@@ -23,6 +24,7 @@ export function createRunContext(
   projectRoot: string,
   stateManager: StateManager,
   commandResults?: Map<string, CommandResult>,
+  stepId?: string,
 ): RunContext {
   return {
     config,
@@ -73,10 +75,11 @@ export function createRunContext(
       throw { __type: "needs_command", command, args } satisfies NeedsCommandSignal;
     },
 
-    async awaitApproval(prompt: string): Promise<void> {
-      console.log(`\n⏸  APPROVAL REQUIRED: ${prompt}`);
-      console.log("   (auto-approved in development mode)\n");
-    },
+    awaitApproval: createApprovalHandler(
+      config.approval_mode ?? "auto",
+      state,
+      stepId ?? "unknown",
+    ),
 
     updateState(stepId: string, result: StepResult): void {
       stateManager.update(state, stepId, result);
