@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from "fs";
+import { createHash } from "crypto";
 import { join } from "path";
 import type { WorkflowState, PipelineScope, StepResult } from "../types.js";
 
@@ -56,5 +57,57 @@ export class StateManager {
       message: result.message,
       evidence: result.evidence,
     };
+  }
+
+  computeFileHash(filePath: string): string {
+    if (!existsSync(filePath)) return "";
+    const content = readFileSync(filePath, "utf-8");
+    return createHash("sha256").update(content).digest("hex").slice(0, 16);
+  }
+
+  checkForStaleState(
+    state: WorkflowState,
+    artifactPaths: Record<string, string>,
+  ): string[] {
+    if (!state.artifact_hashes) return [];
+    const staleArtifacts: string[] = [];
+    for (const [name, path] of Object.entries(artifactPaths)) {
+      const currentHash = this.computeFileHash(path);
+      const savedHash = state.artifact_hashes[name];
+      if (savedHash && currentHash !== savedHash) {
+        staleArtifacts.push(name);
+      }
+    }
+    return staleArtifacts;
+  }
+
+  updateArtifactHashes(
+    state: WorkflowState,
+    artifactPaths: Record<string, string>,
+  ): void {
+    state.artifact_hashes = {};
+    for (const [name, path] of Object.entries(artifactPaths)) {
+      state.artifact_hashes[name] = this.computeFileHash(path);
+    }
+  }
+
+  invalidateDownstream(
+    state: WorkflowState,
+    fromStepId: string,
+    allSteps: Array<{ id: string; deps: string[] }>,
+  ): string[] {
+    const invalidated: string[] = [];
+    const queue = [fromStepId];
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      for (const step of allSteps) {
+        if (step.deps.includes(current) && !invalidated.includes(step.id)) {
+          invalidated.push(step.id);
+          delete state.steps[step.id];
+          queue.push(step.id);
+        }
+      }
+    }
+    return invalidated;
   }
 }

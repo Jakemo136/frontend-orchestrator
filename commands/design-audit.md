@@ -25,10 +25,14 @@ Dispatch all three subagents in a single Agent tool message:
 These are independent and must run in parallel to avoid
 context bloat. Never run them sequentially.
 
-When subagents return, condense their results into a
-unified summary. Do NOT paste each subagent's full output
-into the conversation — extract violations by severity,
-affected routes, and screenshot paths.
+When subagents return, present results in two layers:
+
+**Summary:** violation counts by severity, routes affected
+**Structured violations** (one per line, always shown):
+- Severity | WCAG criterion | Route | DOM selector | Description
+
+Keep every violation visible. Condense narrative explanation
+around the violations, not the violations themselves.
 
 ## Phase 2: Visual composition review (after Phase 1)
 
@@ -113,11 +117,35 @@ then breakpoint: mobile / tablet / desktop / lg-desktop]
 
 ## Phase 3: Auto-fix Critical and Major issues
 
-1. Apply fixes
-2. Re-run a11y-scanner on fixed routes
-3. Re-capture screenshots at all breakpoints
-4. Re-run visual composition review on new screenshots
-5. Confirm violations resolved
-6. Update DESIGN_AUDIT.md
+Rollback-safe auto-fix protocol:
+
+1. **Checkpoint:** Before any fix, record the list of files
+   that will be modified. Use `git stash push -m "pre-autofix"` 
+   or copy files to a temp location if not in a git repo.
+
+2. **Apply fixes** for Critical issues first, then Major.
+
+3. **Verify fixes:**
+   a. Re-run a11y-scanner on fixed routes
+   b. Re-capture screenshots at all breakpoints
+   c. Re-run visual composition review on new screenshots
+   d. Run full RTL test suite — no new failures allowed
+
+4. **Evaluate results:**
+   - If re-scan shows zero new violations AND RTL tests pass:
+     fixes are good. Update DESIGN_AUDIT.md.
+   - If re-scan shows NEW violations not in the original report:
+     ROLLBACK. Restore from checkpoint. Mark the original
+     violation as "auto-fix attempted, caused regression —
+     manual fix required" in DESIGN_AUDIT.md.
+   - If RTL tests fail after fix: ROLLBACK. Restore from
+     checkpoint. Mark as "auto-fix broke RTL tests — manual
+     fix required" in DESIGN_AUDIT.md.
+
+5. **Escalate unfixable issues:** Surface to user with:
+   - What the violation is
+   - What fix was attempted
+   - Why it failed (new violation or broken test)
+   - Suggested manual approach
 
 Do not auto-fix Minor issues — flag for human review.

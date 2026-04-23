@@ -18,6 +18,12 @@ Executes all four audit phases:
    sequentially.
 2. After all three complete: consolidated report written
    to /docs/DESIGN_AUDIT.md
+3. Code Review Gate on auto-fixed files:
+   If any files were modified during auto-fix:
+   - Invoke code-reviewer agent against modified files
+   - Context: "Design audit auto-fix for [routes]"
+   - Critical/Major: fix, re-run audit on affected routes
+   - Minor: note in DESIGN_AUDIT.md but do not block
 
 Reports back to orchestrator:
 - Count of critical, major, minor violations found

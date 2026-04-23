@@ -97,10 +97,14 @@ in a single Agent tool message — one per route:
 
 ## Collecting results
 
-When per-route subagents return, condense all results into
-a unified report. Do NOT paste each subagent's full output
-into the conversation — extract findings by severity, merge
-duplicates across routes, and present a single summary.
+When per-route subagents return, merge into a unified report:
+
+**Summary:** finding counts by severity, routes affected
+**Structured findings** (one per line, always shown):
+- Severity | Category (H1-H10 / Gestalt / Frustration) | Route | Description
+
+Merge exact duplicates across routes (same issue, same
+element). Keep every unique finding visible.
 
 ## Report: /docs/VISUAL_QA.md
 
@@ -140,8 +144,15 @@ For each finding, always answer:
 > "Would this frustrate or confuse a real user?
 > If so, how badly and how often?"
 
-Auto-fix Critical and Major issues following the
-same fix → re-test → confirm cycle as /design-audit.
+Auto-fix Critical and Major issues following the same
+rollback-safe protocol as /design-audit Phase 3:
+
+1. Checkpoint files before fix
+2. Apply fix
+3. Re-run affected checks (screenshot, interaction test)
+4. Run RTL tests — no new failures
+5. If fix causes regression: rollback and escalate
+6. If fix is clean: update VISUAL_QA.md
 
 Do not auto-fix Minor issues — flag for human review.
 

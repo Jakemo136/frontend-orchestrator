@@ -23,3 +23,14 @@ Produce a concise briefing with:
 - What's next based on dependency order
 - Open questions or blockers
 - Suggested first action
+
+7. Check for stale state:
+   Compare hashes of UI_REQUIREMENTS.md and
+   COMPONENT_INVENTORY.md against saved hashes in
+   WORKFLOW_STATE.json. If either file changed since
+   the last pipeline run:
+   - Warn: "⚠️ [filename] has changed since the last
+     pipeline run. Downstream steps may be using stale
+     specs. Run /build-pipeline to re-plan, or manually
+     reset with: delete .orchestrator/WORKFLOW_STATE.json"
+   - List which steps would be invalidated

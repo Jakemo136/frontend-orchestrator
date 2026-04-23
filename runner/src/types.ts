@@ -180,4 +180,5 @@ export interface WorkflowState {
   started_at: string;
   updated_at: string;
   steps: Record<string, StepState>;
+  artifact_hashes?: Record<string, string>;
 }
