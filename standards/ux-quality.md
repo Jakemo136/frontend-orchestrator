@@ -366,3 +366,21 @@ Flag any instance found:
 - **Broken expectations** — clicking "Back" goes
   somewhere unexpected, closing a modal loses
   changes without warning
+
+## Scope and Relationship to Other Standards
+
+This document covers:
+- Nielsen's 10 usability heuristics
+- Gestalt principles (visual grouping)
+- Interaction quality (touch targets, affordances, microcopy)
+- Cognitive load and comprehension
+- Frustration signals
+
+It does NOT cover:
+- WCAG compliance → see standards/design-and-a11y.md
+- Color contrast ratios → see design-and-a11y.md
+- ARIA roles and landmarks → see design-and-a11y.md
+- Token adherence → see design-and-a11y.md
+
+Used by: /visual-qa command
+Prerequisite: /design-audit should pass before running /visual-qa

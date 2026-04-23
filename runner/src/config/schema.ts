@@ -14,6 +14,22 @@ const evidenceConfigSchema = z.object({
   collect_to: z.string().default(".orchestrator/evidence"),
 });
 
+const breakpointSchema = z.object({
+  name: z.string(),
+  width: z.number().int().positive(),
+  height: z.number().int().positive(),
+});
+
+const designAuditConfigSchema = z.object({
+  breakpoints: z.array(breakpointSchema).default([
+    { name: "mobile", width: 375, height: 812 },
+    { name: "tablet", width: 768, height: 1024 },
+    { name: "desktop", width: 1280, height: 900 },
+    { name: "lgDesktop", width: 1440, height: 900 },
+  ]),
+  wcag_target: z.string().default("WCAG22AA"),
+});
+
 const stepDefinitionSchema = z.object({
   id: z.string().min(1),
   type: z.string().min(1),
@@ -51,6 +67,7 @@ export const configSchema = z.object({
     informational_on_feature: z.array(z.string()),
   }),
   evidence: evidenceConfigSchema.default({}),
+  design_audit: designAuditConfigSchema.default({}),
   steps: z.array(stepDefinitionSchema).optional(),
 });
 

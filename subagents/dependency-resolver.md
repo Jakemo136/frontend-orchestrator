@@ -25,4 +25,8 @@ Produces a wave plan:
    ## Wave 1 (depends on Wave 0)
    - Form: depends on Button, Input
      Reason: needs Button and Input to be built first
+
+   ## Wave 2 (depends on Wave 0 + 1)
+   - Dashboard: depends on Form
+     Reason: must wait for Form
 7. Return wave plan to orchestrator

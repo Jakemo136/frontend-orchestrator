@@ -16,7 +16,12 @@ while [[ "$WORKSPACE" != "/" ]]; do
 done
 
 if [[ "$WORKSPACE" == "/" ]]; then
-  echo "Error: Could not find workspace root. Is this plugin inside .claude/plugins/?"
+  echo "Error: Could not find workspace root."
+  echo "Expected structure: /path/to/workspace/.claude/plugins/frontend-orchestration/"
+  echo "Found plugin at: $PLUGIN_DIR"
+  echo "Parent directory: $(dirname "$PLUGIN_DIR")"
+  echo ""
+  echo "Make sure this plugin is installed inside a .claude/plugins/ directory."
   exit 1
 fi
 
@@ -28,9 +33,9 @@ cd "$PLUGIN_DIR"
 echo "  runner..."
 (cd runner && npm install --silent)
 echo "  a11y-scanner..."
-(cd mcp/a11y-scanner && npm install --silent)
+(cd mcp/a11y-scanner && npm ci --silent 2>/dev/null || npm install --silent)
 echo "  screenshot-review..."
-(cd mcp/screenshot-review && npm install --silent)
+(cd mcp/screenshot-review && npm ci --silent 2>/dev/null || npm install --silent)
 
 # Install Playwright browsers
 echo "  Playwright browsers..."

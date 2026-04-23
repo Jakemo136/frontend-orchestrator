@@ -5,7 +5,7 @@ const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
 
-const BREAKPOINTS = {
+const DEFAULT_BREAKPOINTS = {
   mobile:     { width: 375,  height: 812  },
   tablet:     { width: 768,  height: 1024 },
   desktop:    { width: 1280, height: 900  },
@@ -23,14 +23,18 @@ server.tool(
   {
     url: z.string().describe('URL to screenshot'),
     route: z.string().describe('Route name for organizing screenshots'),
-    baselineDir: z.string().optional().describe('Path to baseline directory for comparison')
+    baselineDir: z.string().optional().describe('Path to baseline directory for comparison'),
+    breakpoints: z.record(z.object({
+      width: z.number(),
+      height: z.number()
+    })).optional().describe('Custom breakpoints (overrides defaults)')
   },
-  async ({ url, route, baselineDir }) => {
+  async ({ url, route, baselineDir, breakpoints }) => {
     const browser = await chromium.launch()
     try {
       const results = {}
 
-      for (const [breakpoint, size] of Object.entries(BREAKPOINTS)) {
+      for (const [breakpoint, size] of Object.entries(breakpoints ?? DEFAULT_BREAKPOINTS)) {
         const page = await browser.newPage()
         await page.setViewportSize(size)
         const response = await page.goto(url, { timeout: 30000 })
@@ -94,7 +98,7 @@ server.tool(
 
     fs.mkdirSync(baselineRouteDir, { recursive: true })
 
-    for (const breakpoint of Object.keys(BREAKPOINTS)) {
+    for (const breakpoint of Object.keys(DEFAULT_BREAKPOINTS)) {
       const src = path.join(routeDir, `${breakpoint}.png`)
       const dest = path.join(baselineRouteDir, `${breakpoint}.png`)
       if (fs.existsSync(src)) fs.copyFileSync(src, dest)
@@ -102,7 +106,7 @@ server.tool(
 
     const output = {
       baselined: route,
-      breakpoints: Object.keys(BREAKPOINTS)
+      breakpoints: Object.keys(DEFAULT_BREAKPOINTS)
     }
 
     return {

@@ -83,6 +83,15 @@ Then:
 - Log results to BUILD_STATUS.md
 - Stop if failures exist, surface to user
 
+Update BUILD_STATUS.md with wave-level rollup:
+
+## Wave [N] Progress
+- [x] ComponentA (RTL: 12/12 passing)
+- [x] ComponentB (RTL: 8/8 passing)
+- [ ] ComponentC (in progress)
+
+Wave [N]: 2/3 complete (67%)
+
 Phase 4 — E2E Green
 After all waves complete, for any still-failing E2E tests:
 - Diagnose root cause

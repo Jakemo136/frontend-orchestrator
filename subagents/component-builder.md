@@ -1,5 +1,8 @@
 # Component Builder Subagent
 
+**Timeout:** 10 minutes per component. If build exceeds
+this, report partial progress and surface to orchestrator.
+
 Receives: ComponentName, component spec from
 COMPONENT_INVENTORY.md (including Build config section),
 relevant section of UI_REQUIREMENTS.md

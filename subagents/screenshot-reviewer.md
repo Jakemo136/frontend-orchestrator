@@ -3,9 +3,12 @@
 Receives: url, route name, optional baseline directory
 
 Uses screenshot-review MCP tool to capture the route at
-all four breakpoints defined in standards/design-and-a11y.md:
-mobile (375px), tablet (768px), desktop (1280px), 
-lg-desktop (1440px).
+breakpoints. Default breakpoints match
+standards/design-and-a11y.md: mobile (375px), tablet
+(768px), desktop (1280px), lg-desktop (1440px).
+
+Custom breakpoints can be configured in
+orchestrator.config.yaml under design_audit.breakpoints.
 
 When reviewing multiple routes, dispatch one capture per
 route in a single Agent tool message. Never process

@@ -13,7 +13,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "rm -rf /tmp/claude-commit-gates && mkdir -p /tmp/claude-commit-gates",
+            "command": "GATE_DIR=\"${TMPDIR:-${TEMP:-/tmp}}/claude-commit-gates\" && rm -rf \"$GATE_DIR\" && mkdir -p \"$GATE_DIR\"",
             "statusMessage": "Resetting commit quality gates..."
           }
         ]
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '.tool_input.subagent_type // \"\"' | { read -r st; case \"$st\" in *code-reviewer*) mkdir -p /tmp/claude-commit-gates && touch /tmp/claude-commit-gates/code-review ;; *code-simplifier*) mkdir -p /tmp/claude-commit-gates && touch /tmp/claude-commit-gates/code-simplifier ;; esac; }",
+            "command": "jq -r '.tool_input.subagent_type // \"\"' | { read -r st; case \"$st\" in *code-reviewer*) mkdir -p ${TMPDIR:-${TEMP:-/tmp}}/claude-commit-gates && touch ${TMPDIR:-${TEMP:-/tmp}}/claude-commit-gates/code-review ;; *code-simplifier*) mkdir -p ${TMPDIR:-${TEMP:-/tmp}}/claude-commit-gates && touch ${TMPDIR:-${TEMP:-/tmp}}/claude-commit-gates/code-simplifier ;; esac; }",
             "statusMessage": "Tracking quality gate..."
           }
         ]
@@ -38,7 +38,7 @@
           {
             "type": "command",
             "if": "Bash(git *)",
-            "command": "jq -r '.tool_input.command' | { read -r cmd; case \"$cmd\" in git*commit*) missing=''; [ ! -f /tmp/claude-commit-gates/code-review ] && missing='code-review'; [ ! -f /tmp/claude-commit-gates/code-simplifier ] && { [ -n \"$missing\" ] && missing=\"$missing, \"; missing=\"${missing}code-simplifier\"; }; if [ -n \"$missing\" ]; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Commit blocked — missing quality gates: %s. Run /simplify and use the code-reviewer agent before committing.\"}}' \"$missing\"; fi ;; esac; }"
+            "command": "jq -r '.tool_input.command' | { read -r cmd; case \"$cmd\" in git*commit*) missing=''; [ ! -f ${TMPDIR:-${TEMP:-/tmp}}/claude-commit-gates/code-review ] && missing='code-review'; [ ! -f ${TMPDIR:-${TEMP:-/tmp}}/claude-commit-gates/code-simplifier ] && { [ -n \"$missing\" ] && missing=\"$missing, \"; missing=\"${missing}code-simplifier\"; }; if [ -n \"$missing\" ]; then printf '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"permissionDecision\":\"deny\",\"permissionDecisionReason\":\"Commit blocked — missing quality gates: %s. Run /simplify and use the code-reviewer agent before committing.\"}}' \"$missing\"; fi ;; esac; }"
           }
         ]
       }

@@ -1,5 +1,8 @@
 # Design Auditor Subagent
 
+**Timeout:** 5 minutes per route. If audit exceeds this,
+report partial results and which routes remain unaudited.
+
 Receives: list of routes to audit, path to component 
 source files
 

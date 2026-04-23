@@ -17,7 +17,7 @@
 | 1 | **DONE** | `632ba02` | #1-9, #11, #13, #14, #20, #22, #24 |
 | 2 | **DONE** | `d174df3` | #6, #8, #10, #13 |
 | 3 | **DONE** | `8e34e66` | #12, #14, #15, #16, #17, #18, #19 |
-| 4 | TODO | — | #21, #23, #25, #26, #27, #28, #29, #30 |
+| 4 | **DONE** | `pending` | #21, #22, #23, #25, #26, #27, #28, #29, #30 |
 
 **Note:** Wave 1 was broader than planned — it covered 17/30 findings by consolidating overlapping fixes. Tasks 6 (result condensing) and 14 (fixture error handling) were partially addressed in Wave 1. Wave 2 tasks 6 and 8 have remaining work. Task 7 (state invalidation) is fully outstanding.
 
