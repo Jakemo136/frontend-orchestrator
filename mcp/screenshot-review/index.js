@@ -33,8 +33,18 @@ server.tool(
       for (const [breakpoint, size] of Object.entries(BREAKPOINTS)) {
         const page = await browser.newPage()
         await page.setViewportSize(size)
-        await page.goto(url)
-        await page.waitForLoadState('networkidle')
+        const response = await page.goto(url, { timeout: 30000 })
+        if (!response) {
+          results[breakpoint] = { path: null, size, error: `Failed to navigate to ${url}` }
+          await page.close()
+          continue
+        }
+
+        try {
+          await page.waitForLoadState('networkidle', { timeout: 10000 })
+        } catch {
+          // Page didn't reach networkidle in 10s — proceed with current state
+        }
 
         const screenshotPath = path.join(
           process.cwd(),

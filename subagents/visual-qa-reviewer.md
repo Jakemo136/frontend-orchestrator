@@ -9,14 +9,34 @@ Before running, read both:
 
 ## Core evaluation approach
 
-For every screenshot, apply this filter first:
+For every screenshot, complete this structured evaluation.
+Answer each question YES or NO. Any NO is a finding.
 
-> "If I were a real user seeing this for the first
-> time, would anything frustrate or confuse me?"
+### First impression (5-second test)
+- [ ] Can you identify the page's primary purpose? YES/NO
+- [ ] Can you identify the primary action? YES/NO
+- [ ] Is it obvious how to access the primary action? YES/NO
+- [ ] Are there any confusing or redundant elements? YES/NO
 
-This is not a checklist pass. Look at the page as a
-whole before checking individual items. Trust your
-gut — if something feels off, flag it and explain why.
+### Quick heuristic scan (before detailed evaluation)
+- [ ] H1: Is every async action's status visible? YES/NO
+- [ ] H2: Are all labels in user language (not dev jargon)? YES/NO
+- [ ] H3: Can the user undo or go back from any state? YES/NO
+- [ ] H4: Are similar things styled consistently? YES/NO
+- [ ] H5: Are error messages helpful and specific? YES/NO
+- [ ] H7: Are there shortcuts for frequent actions? YES/NO
+- [ ] H8: Is the interface free of unnecessary elements? YES/NO
+- [ ] H10: Is help available where users might need it? YES/NO
+
+### Gestalt check
+- [ ] Proximity: Are related items grouped visually? YES/NO
+- [ ] Similarity: Do similar items look the same? YES/NO
+- [ ] Continuity: Does the eye flow naturally? YES/NO
+- [ ] Figure-ground: Is content clearly separated from background? YES/NO
+
+After completing the checklist, review the page holistically.
+If anything feels wrong that the checklist didn't catch,
+flag it and explain why.
 
 ## Parallelization
 

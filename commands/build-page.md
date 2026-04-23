@@ -13,7 +13,10 @@ Protocol:
    components they depend on
 3. Invoke the dependency-resolver subagent to produce
    a wave plan for this page's components
-4. Write wave plan to /docs/BUILD_PLAN.md
+4. Write wave plan to /docs/BUILD_PLAN_[PageName].md
+   (e.g., /docs/BUILD_PLAN_Dashboard.md)
+   This avoids overwriting the full-app BUILD_PLAN.md
+   if /build-pipeline was run previously.
 5. Present plan to user and wait for explicit approval
 6. On approval, invoke wave-executor subagent to build
    each wave

@@ -18,3 +18,25 @@ Confirm with user before promoting — this overwrites
 the previous baseline.
 
 Uses screenshot-review MCP setBaseline method.
+
+After baselining, write metadata to
+screenshots/baseline/metadata.json:
+
+```json
+{
+  "baselined_at": "ISO timestamp",
+  "routes": {
+    "[route]": {
+      "baselined_at": "ISO timestamp",
+      "component_hashes": {
+        "[ComponentName]": "short file hash"
+      }
+    }
+  }
+}
+```
+
+On subsequent baselines, warn if any component file
+has changed since the baseline was set:
+"⚠️ [ComponentName] was modified since baseline was set.
+Review screenshots before promoting."

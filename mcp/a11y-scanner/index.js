@@ -20,11 +20,29 @@ server.tool(
     const browser = await chromium.launch()
     try {
       const page = await browser.newPage()
-      await page.goto(url)
+
+      const response = await page.goto(url, { timeout: 30000 })
+      if (!response) {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            error: `Failed to navigate to ${url}`,
+            violations: [], passes: 0, incomplete: 0, inapplicable: 0
+          }, null, 2) }]
+        }
+      }
 
       const results = await new AxePuppeteer(page)
         .withTags([standard.toLowerCase()])
         .analyze()
+
+      if (!results.violations && !results.passes) {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({
+            error: 'axe-core did not return valid results — page may not have loaded correctly',
+            violations: [], passes: 0, incomplete: 0, inapplicable: 0
+          }, null, 2) }]
+        }
+      }
 
       const output = {
         violations: results.violations.map(v => ({

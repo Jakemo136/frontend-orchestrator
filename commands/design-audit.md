@@ -88,6 +88,8 @@ findings in the appropriate severity bucket.
 ## Report: /docs/DESIGN_AUDIT.md
 
 ## Critical (fix before merge)
+Each violation must include:
+- Route, Component name, Source file path, DOM selector
 - WCAG AA violations
 - Broken layouts at any breakpoint
 - Missing focus indicators
@@ -114,6 +116,20 @@ then breakpoint: mobile / tablet / desktop / lg-desktop]
 
 ## Passes
 [what is already correct]
+
+## Acknowledged Issues (user-approved to ship)
+
+If the user has previously acknowledged a minor or major
+issue, record it here:
+
+- Issue: [description]
+  Acknowledged: [date]
+  Reason: "[user's stated reason]"
+  Tracked: [issue URL if applicable]
+
+On re-run, skip checking acknowledged issues unless:
+- The component source file has changed since acknowledgment
+- The WCAG criterion was upgraded from Minor to Critical
 
 ## Phase 3: Auto-fix Critical and Major issues
 

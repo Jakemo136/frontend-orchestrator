@@ -25,9 +25,18 @@ Executes all four audit phases:
    - Critical/Major: fix, re-run audit on affected routes
    - Minor: note in DESIGN_AUDIT.md but do not block
 
-Reports back to orchestrator:
+Reports back to orchestrator with component attribution:
 - Count of critical, major, minor violations found
 - Count of violations auto-fixed
 - Count of violations remaining
 - Screenshot paths for PR attachment
 - Pass or fail (fail = any unresolved critical violations)
+
+Per-violation detail (mandatory):
+- Route: [route path]
+- Component: [ComponentName from COMPONENT_INVENTORY.md]
+  (match DOM selector to component source file)
+- File: [src/components/.../ComponentName.tsx]
+- Issue: [WCAG criterion or visual composition rule]
+- DOM selector: [CSS selector of offending element]
+- Fix: [specific change needed]
