@@ -42,7 +42,7 @@ export class MergeToMainStep extends BaseStep {
         // Parse failure — proceed to create PR
       }
       if (existingPrs.length > 0) {
-        prUrl = existingPrs[0].url;
+        prUrl = existingPrs[0]!.url;
       } else {
         const prResult = await ctx.exec(
           `gh pr create --base ${main} --head ${feature} --title "Merge ${feature} to ${main}" --body "Automated PR from orchestrator"`,
@@ -76,12 +76,14 @@ export class MergeToMainStep extends BaseStep {
     const requiredChecks = ctx.config.ci.required_on_main;
     if (requiredChecks.length > 0) {
       const checksResult = await ctx.exec(
-        `gh pr checks --json name,state --required`,
+        `gh pr checks ${prUrl} --json name,state`,
       );
       if (checksResult.exitCode === 0) {
         try {
           const checks = JSON.parse(checksResult.stdout) as Array<{ name: string; state: string }>;
-          const failing = checks.filter((c) => c.state !== "SUCCESS" && c.state !== "SKIPPED");
+          const failing = checks
+            .filter((c) => requiredChecks.includes(c.name))
+            .filter((c) => c.state !== "SUCCESS" && c.state !== "SKIPPED");
           if (failing.length > 0) {
             const list = failing.map((c) => `${c.name} (${c.state})`).join(", ");
             return {

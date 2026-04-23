@@ -108,7 +108,7 @@ Each phase gates on the previous. The pipeline resumes from any checkpoint. With
 
 ```
 frontend-orchestration/
-  commands/       13 slash commands
+  commands/       13 slash commands + 3 internal pipeline subcommands
   subagents/      8 specialized agents (component-builder, e2e-writer, etc.)
   runner/         DAG executor, state machine, evidence pipeline, step implementations
   mcp/            2 MCP servers (a11y-scanner, screenshot-review + visual regression)
