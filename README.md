@@ -19,7 +19,7 @@ git clone https://github.com/Jakemo136/frontend-orchestrator.git \
 
 The plugin **must** live at `.claude/plugins/frontend-orchestration/` relative to your workspace root.
 
-Setup installs dependencies, Playwright browsers, and symlinks commands into `.claude/commands/` for discovery. Restart Claude Code after install, then verify with `/session-start`.
+Setup installs dependencies, Playwright browsers, and symlinks commands into `.claude/commands/` for discovery. It also offers to install **quality gate hooks** that block `git commit` until code-review and code-simplify have run in the current session. Hooks are recommended but optional — decline during setup or install later via `setup/install-hooks.md`. Restart Claude Code after install, then verify with `/session-start`.
 
 Create `orchestrator.config.yaml` in your project root:
 
@@ -99,7 +99,7 @@ frontend-orchestration/
   mcp/            2 MCP servers (a11y-scanner, screenshot-review + visual regression)
   standards/      Design, a11y, and UX quality checklists
   docs/           Quality matrix, audit findings, implementation plans
-  setup/          Hooks and install
+  setup/          Hooks, install script, quality gate config
 ```
 
 See [`docs/QUALITY_MATRIX.md`](docs/QUALITY_MATRIX.md) for which checks are runner-enforced vs. prompt-delegated vs. manual.
