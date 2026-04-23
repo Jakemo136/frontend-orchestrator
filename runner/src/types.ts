@@ -147,6 +147,7 @@ export function isNeedsCommandSignal(err: unknown): err is NeedsCommandSignal {
 // ─── Runner Output ──────────────────────────────────
 export type RunnerOutput =
   | { type: "step_complete"; stepId: string; result: StepResult; nextStepId: string | null }
+  | { type: "steps_complete"; results: Array<{ stepId: string; result: StepResult }>; nextStepId: string | null }
   | { type: "needs_command"; stepId: string; command: string; args?: string }
   | { type: "pipeline_done" }
   | { type: "pipeline_failed"; stepId: string; result: StepResult };
