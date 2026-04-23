@@ -2,7 +2,7 @@
 
 A Claude Code plugin that builds your entire frontend from a conversation. Describe what you want, it interviews you, writes tests, builds components, audits everything, and opens PRs — dependency order, TDD, your approval at every gate.
 
-`/ui-interview` asks about pages, components, data flows, and edge cases. `/build-pipeline` resolves components into dependency waves (leaf nodes first), writes failing tests, builds to green, and audits each wave before opening PRs. Nothing ships without your sign-off.
+`/ui-interview` asks about pages, components, data flows, and edge cases. `/build-pipeline` resolves components into dependency waves (leaf nodes first), writes failing tests, builds to green, and audits each wave before opening PRs. Nothing ships without your sign-off — the pipeline pauses at every gate (requirements, build plan, baseline, merge) and returns control to your Claude Code session. You review the output and decide whether to continue. In CI mode (`approval_mode: ci`), approval gates reject automatically.
 
 ## Quick start
 
@@ -123,6 +123,10 @@ Critical/Major issues are auto-fixed and re-verified. Minor issues are flagged f
 ## Evidence pipeline
 
 E2E test runs collect Playwright traces, failure screenshots, and a machine-readable `evidence-manifest.json` — all persisted to `.orchestrator/evidence/`.
+
+## Compatibility
+
+The runner is framework-agnostic — it executes shell commands from your config and tracks state in JSON. The testing conventions (post-wave review, wiring audit) are designed for React + GraphQL + Vitest + RTL + Playwright + MSW. Other stacks work with the runner but need adapted command specs. See `runner/README.md` for the full compatibility matrix.
 
 ## Requirements
 
