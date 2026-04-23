@@ -3,7 +3,7 @@ import { registerStep } from "./registry.js";
 import type { StepDescription, PreflightResult, StepResult, RunContext } from "../types.js";
 
 export function countWaves(planContent: string): number {
-  const matches = planContent.match(/^##\s*[Ww]ave\s+\d+/gm);
+  const matches = planContent.match(/^##\s*wave\s+\d+/gim);
   return Math.max(1, matches?.length ?? 1);
 }
 

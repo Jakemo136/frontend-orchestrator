@@ -59,7 +59,7 @@ describe("DependencyResolveStep", () => {
 
   it("countWaves handles mixed case", () => {
     const content = "## wave 0\n## Wave 1\n## WAVE 2";
-    expect(countWaves(content)).toBeGreaterThanOrEqual(2);
+    expect(countWaves(content)).toBe(3);
   });
 
   it("execute returns wave_count in metrics", async () => {
