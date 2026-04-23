@@ -58,7 +58,7 @@ function buildFailureEvidence(spec: PlaywrightSpec, file: string): FailureEviden
   const errorStack = lastResult.error?.stack ?? "";
 
   const stackMatch = errorStack.match(/at\s+(.+\.(?:e2e|test|spec)\.[tj]sx?:\d+)/);
-  const testFile = stackMatch ? stackMatch[1] : file;
+  const testFile = stackMatch?.[1] ?? file;
 
   return {
     testName: spec.title,

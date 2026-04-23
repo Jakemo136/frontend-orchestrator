@@ -58,7 +58,7 @@ export async function validatePlaywrightConfig(deps: PreflightDeps): Promise<Pre
   }
 
   const retriesMatch = configContent.match(RETRIES_PATTERN);
-  if (retriesMatch && parseInt(retriesMatch[1], 10) < 1) {
+  if (retriesMatch?.[1] && parseInt(retriesMatch[1], 10) < 1) {
     issues.push(
       "Set `retries: 1` in playwright.config.ts — first-retry traces only work with at least one retry.",
     );

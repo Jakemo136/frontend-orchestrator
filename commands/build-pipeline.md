@@ -29,10 +29,34 @@ Subagent B: dependency-resolver
 - Flag circular dependencies as errors
 - Write full wave plan to /docs/BUILD_PLAN.md
 
-Wait for both to complete. When subagents return, do NOT
-dump their full output into the conversation. Read each
-result, extract only what matters (pass/fail, key findings,
-file paths), and present a condensed summary to the user.
+Wait for both to complete. When subagents return, present
+results in two layers:
+
+**Summary** (always shown):
+- Overall pass/fail per subagent
+- Count of tests written / waves planned
+- Any blockers (circular deps, missing requirements)
+
+**Structured findings** (always shown, one per line):
+- Each E2E test: file path, flow name, assertion count
+- Each wave: component list, estimated complexity
+- Each error: severity, location, description
+
+Do NOT condense the structured findings — these are the
+evidence the user needs to make approval decisions. Condense
+narrative explanation only.
+
+**Circular dependency gate (mandatory):**
+Check BUILD_PLAN.md for any components flagged as circular
+dependencies. If ANY circular dependencies exist:
+1. STOP the pipeline
+2. Surface the specific cycles to the user:
+   "Circular dependency detected: ComponentA -> ComponentB
+    Fix COMPONENT_INVENTORY.md to break the cycle and
+    re-run /build-pipeline"
+3. Do NOT proceed to Phase 3
+
+If no circular dependencies:
 Present BUILD_PLAN.md to user. Wait for explicit approval
 before Phase 3.
 
@@ -42,9 +66,16 @@ Within each wave, dispatch all component-builder subagents
 in a single Agent tool message — one per component, all
 in parallel. Never build components one at a time.
 
-After each wave, condense all component-builder results
-into a single summary: which passed, which failed, key
-issues. Do NOT relay each subagent's full report verbatim.
+After each wave, present component-builder results in two layers:
+
+**Summary table** (always shown):
+| Component | Status | RTL Tests | Issues |
+|-----------|--------|-----------|--------|
+
+**Per-component details** (always shown for failures):
+For each failed component: which tests failed, the
+assertion that failed, code reviewer findings. Do NOT
+hide failure details in a summary.
 
 Then:
 - Run full RTL suite

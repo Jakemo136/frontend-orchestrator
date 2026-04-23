@@ -11,9 +11,21 @@ For the wave:
    using the Agent tool — one per component. Each subagent
    receives its component name and spec.
 2. Wait for all to complete.
-3. Collect results — read each subagent's output but do NOT
-   relay full reports. Extract pass/fail, test counts, and
-   key issues per component into a condensed wave summary.
+3. Collect results and present in two layers:
+
+   **Summary table** (always shown):
+   | Component | Status | RTL Tests | Issues |
+   |-----------|--------|-----------|--------|
+   | Button    | pass   | 12/12     | 0      |
+   | Card      | fail   | 8/10     | 1 Critical |
+
+   **Per-component details** (always shown for failures):
+   For each failed component:
+   - Which tests failed and the assertion that failed
+   - Code reviewer findings (severity, file, description)
+   - Exact error message from test runner
+
+   Do NOT hide failure details in a summary.
 4. Log each completion or failure to BUILD_STATUS.md.
 5. After all complete:
    - If all succeeded: report wave complete to orchestrator

@@ -26,8 +26,11 @@ Sections in order:
 
 3. Navigation and layout
    - Global nav structure
-   - Mobile vs desktop considerations
+   - Mobile vs desktop navigation (hamburger? bottom nav? sidebar collapse?)
    - Any persistent UI (sidebars, headers, toasts)?
+   - What changes between mobile, tablet, and desktop?
+   - Any features mobile-only or desktop-only?
+   - Touch-specific interactions? (swipe, long-press)
 
 4. Key interactions
    - File upload flow — step by step from user perspective
@@ -49,6 +52,29 @@ On completion, produce:
   - All loading/error/empty states
   - Full user flow narratives for all key interactions
   - Open questions flagged for review
+  - Test specification block (structured, not prose):
+
+  ## Test Specification
+
+  ### Authentication
+  - Type: [none | cookie | token | storage | OAuth]
+  - Provider: [Clerk | Auth0 | custom endpoint | none]
+  - Fixture setup: [server call | token injection | storage state | none]
+
+  ### Data Layer
+  - Type: [GraphQL | REST | local-only]
+  - Mock strategy: [MSW | test DB | API seeding | none]
+  - Schema location: [path if applicable]
+
+  ### Per-Flow Error Scenarios
+  For each flow identified in Section 4:
+  - [Flow name]: [list error cases: network timeout, validation failure, auth expired, empty response]
+
+  ### Responsive Behavior
+  - Mobile layout: [stack | collapse nav | bottom sheet | full-width]
+  - Tablet layout: [sidebar changes | grid adjustments | same as desktop]
+  - Desktop-only features: [drag-drop | multi-pane | keyboard shortcuts]
+  - Touch-specific interactions: [swipe | long-press | none]
 
 /docs/COMPONENT_INVENTORY.md
   One entry per component in this exact format:
@@ -58,7 +84,22 @@ On completion, produce:
   - Dependencies: [list of other components, or "none"]
   - GraphQL: [query or mutation name, or "none"]
   - Complexity: [low / medium / high]
+  - Build config:
+    - File: src/components/[Page]/[ComponentName].tsx
+    - Test: src/components/[Page]/[ComponentName].test.tsx
+    - Styles: src/components/[Page]/[ComponentName].module.css
+    - Test utilities: src/test-utils.ts
+    - GraphQL imports: src/graphql/[queries|mutations].ts
+    - Test runner: vitest
+    - CSS approach: CSS Modules
+    - Token file: src/styles/tokens.css
   - Build status: [ ] not started
+
+  Required fields per component (all must be present):
+  - Page, Dependencies, GraphQL, Complexity, Build config,
+    Build status
+  If any field is missing, downstream steps will fail.
+  Validate before approving.
 
 Do not build components until the user has reviewed and
 approved both documents.
