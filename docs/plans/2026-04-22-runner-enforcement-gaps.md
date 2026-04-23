@@ -14,10 +14,10 @@
 
 | Phase | Status | Commit | Tasks |
 |-------|--------|--------|-------|
-| 1 | TODO | — | 1-2 (code bugs) |
-| 2 | TODO | — | 3-4 (enforcement gaps) |
-| 3 | TODO | — | 5-6 (feature gaps) |
-| 4 | TODO | — | 7 (transparency) |
+| 1 | DONE | 4f0960c, e527420, fc10674 | 1-2 (code bugs) |
+| 2 | DONE | 5d27535, 014945e | 3-4 (enforcement gaps) |
+| 3 | DONE | 7678520, 93684a6 | 5-6 (feature gaps) |
+| 4 | DONE | 2fd4623 | 7 (transparency) |
 
 ---
 
