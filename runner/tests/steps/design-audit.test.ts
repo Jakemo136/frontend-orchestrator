@@ -12,7 +12,7 @@ describe("DesignAuditStep", () => {
   });
 
   it("preflight fails when dev server is down", async () => {
-    const exec = vi.fn(async () => ({ exitCode: 0, stdout: "000", stderr: "", timedOut: false }));
+    const exec = vi.fn(async () => ({ exitCode: 0, stdout: "000|text/html|000|0", stderr: "", timedOut: false }));
     const ctx = makeMockContext({ exec });
     const step = new DesignAuditStep(makeDefinition());
     const result = await step.preflight(ctx);
@@ -21,7 +21,7 @@ describe("DesignAuditStep", () => {
   });
 
   it("preflight passes when dev server responds 200", async () => {
-    const exec = vi.fn(async () => ({ exitCode: 0, stdout: "200", stderr: "", timedOut: false }));
+    const exec = vi.fn(async () => ({ exitCode: 0, stdout: "200|text/html|200|0", stderr: "", timedOut: false }));
     const ctx = makeMockContext({ exec });
     const step = new DesignAuditStep(makeDefinition());
     const result = await step.preflight(ctx);
