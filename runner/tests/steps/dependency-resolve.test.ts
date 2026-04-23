@@ -3,6 +3,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { describe, it, expect, vi } from "vitest";
 import { DependencyResolveStep, countWaves, parseWavePlan } from "../../src/steps/dependency-resolve.js";
+import { ApprovalDeniedError } from "../../src/runner/approval.js";
 import { makeDefinition, makeMockContext } from "./helpers.js";
 
 describe("DependencyResolveStep", () => {
@@ -49,7 +50,7 @@ describe("DependencyResolveStep", () => {
 
   it("execute fails when user rejects plan", async () => {
     const exists = vi.fn(async () => true);
-    const awaitApproval = vi.fn(async () => { throw new Error("rejected"); });
+    const awaitApproval = vi.fn(async () => { throw new ApprovalDeniedError("build plan"); });
     const ctx = makeMockContext({ exists, awaitApproval });
     const step = new DependencyResolveStep(makeDefinition());
     const result = await step.execute(ctx);

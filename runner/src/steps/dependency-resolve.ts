@@ -2,6 +2,7 @@ import { mkdirSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { BaseStep } from "./base.js";
 import { registerStep } from "./registry.js";
+import { ApprovalDeniedError } from "../runner/approval.js";
 import type { StepDescription, PreflightResult, StepResult, RunContext } from "../types.js";
 
 export function countWaves(planContent: string): number {
@@ -75,7 +76,8 @@ export class DependencyResolveStep extends BaseStep {
 
     try {
       await ctx.awaitApproval(`Review and approve build plan: ${planPath}`);
-    } catch {
+    } catch (err) {
+      if (!(err instanceof ApprovalDeniedError)) throw err;
       return {
         status: "failed",
         artifacts: [],
