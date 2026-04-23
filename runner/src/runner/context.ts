@@ -25,6 +25,7 @@ export function createRunContext(
   stateManager: StateManager,
   commandResults?: Map<string, CommandResult>,
   stepId?: string,
+  approvalResults?: Map<string, boolean>,
 ): RunContext {
   return {
     config,
@@ -83,6 +84,7 @@ export function createRunContext(
       config.approval_mode ?? "auto",
       state,
       stepId ?? "unknown",
+      approvalResults,
     ),
 
     updateState(stepId: string, result: StepResult): void {

@@ -2,7 +2,7 @@
 
 A Claude Code plugin that builds your entire frontend from a conversation. Describe what you want, it interviews you, writes tests, builds components, audits everything, and opens PRs — dependency order, TDD, your approval at every gate.
 
-`/ui-interview` asks about pages, components, data flows, and edge cases. `/build-pipeline` resolves components into dependency waves (leaf nodes first), writes failing tests, builds to green, and audits each wave before opening PRs. Nothing ships without your sign-off — the pipeline pauses at every gate (requirements, build plan, baseline, merge) and returns control to your Claude Code session. You review the output and decide whether to continue. In CI mode (`approval_mode: ci`), approval gates reject automatically.
+`/ui-interview` asks about pages, components, data flows, and edge cases. `/build-pipeline` resolves components into dependency waves (leaf nodes first), writes failing tests, builds to green, and audits each wave before opening PRs. Nothing ships without passing every gate. In `interactive` mode, the pipeline pauses at each gate and returns control to your Claude Code session — you review and decide whether to continue. In the default `auto` mode, gates are logged and auto-approved. In `ci` mode, gates reject automatically.
 
 ## Quick start
 
@@ -49,6 +49,7 @@ ci:
   required_on_main: [client, e2e]
   required_on_feature: [client]
   informational_on_feature: [e2e]
+approval_mode: interactive
 ```
 
 ## Commands
@@ -68,6 +69,16 @@ ci:
 | `/design-audit [route?]` | A11y + design audit at all breakpoints, auto-fix critical issues |
 | `/visual-qa [route?]` | UX quality review — Nielsen's heuristics, Gestalt, frustration signals |
 | `/set-baseline [route?]` | Promote screenshots to visual regression baseline |
+
+## Approval modes
+
+| Mode | Behavior | Use when |
+|------|----------|----------|
+| `auto` (default) | Gates log and auto-approve | Rapid prototyping, trusted automation |
+| `interactive` | Pipeline pauses, returns control to your session | Production builds, review-gated workflows |
+| `ci` | Gates reject automatically | CI/CD pipelines, zero-human-input runs |
+
+Set `approval_mode` in `orchestrator.config.yaml`. Gates that pause in interactive mode: build plan approval, baseline promotion, and any step that calls `awaitApproval`.
 
 ## How it works
 

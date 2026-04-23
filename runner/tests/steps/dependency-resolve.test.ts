@@ -1,5 +1,9 @@
+import { mkdirSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import { describe, it, expect, vi } from "vitest";
-import { DependencyResolveStep, countWaves } from "../../src/steps/dependency-resolve.js";
+import { DependencyResolveStep, countWaves, parseWavePlan } from "../../src/steps/dependency-resolve.js";
+import { ApprovalDeniedError } from "../../src/runner/approval.js";
 import { makeDefinition, makeMockContext } from "./helpers.js";
 
 describe("DependencyResolveStep", () => {
@@ -18,15 +22,21 @@ describe("DependencyResolveStep", () => {
   });
 
   it("execute passes when plan generated and user approves", async () => {
-    const exists = vi.fn(async () => true);
-    const readFile = vi.fn(async () => "## Wave 0\ncomponents");
-    const awaitApproval = vi.fn(async () => {});
-    const ctx = makeMockContext({ exists, readFile, awaitApproval });
-    const step = new DependencyResolveStep(makeDefinition());
-    const result = await step.execute(ctx);
-    expect(result.status).toBe("passed");
-    expect(result.artifacts).toContain("docs/BUILD_PLAN.md");
-    expect(result.metrics.wave_count).toBeDefined();
+    const tmpDir = join(tmpdir(), `dep-resolve-test-${Date.now()}`);
+    mkdirSync(tmpDir, { recursive: true });
+    try {
+      const exists = vi.fn(async () => true);
+      const readFile = vi.fn(async () => "## Wave 0\ncomponents");
+      const awaitApproval = vi.fn(async () => {});
+      const ctx = makeMockContext({ exists, readFile, awaitApproval, resolve: (p: string) => join(tmpDir, p), projectRoot: tmpDir });
+      const step = new DependencyResolveStep(makeDefinition());
+      const result = await step.execute(ctx);
+      expect(result.status).toBe("passed");
+      expect(result.artifacts).toContain("docs/BUILD_PLAN.md");
+      expect(result.metrics.wave_count).toBeDefined();
+    } finally {
+      rmSync(tmpDir, { recursive: true });
+    }
   });
 
   it("execute fails when plan not generated", async () => {
@@ -40,7 +50,7 @@ describe("DependencyResolveStep", () => {
 
   it("execute fails when user rejects plan", async () => {
     const exists = vi.fn(async () => true);
-    const awaitApproval = vi.fn(async () => { throw new Error("rejected"); });
+    const awaitApproval = vi.fn(async () => { throw new ApprovalDeniedError("build plan"); });
     const ctx = makeMockContext({ exists, awaitApproval });
     const step = new DependencyResolveStep(makeDefinition());
     const result = await step.execute(ctx);
@@ -63,14 +73,58 @@ describe("DependencyResolveStep", () => {
   });
 
   it("execute returns wave_count in metrics", async () => {
-    const planContent = "## Wave 0\ncomp A\n## Wave 1\ncomp B\n## Wave 2\ncomp C";
-    const exists = vi.fn(async () => true);
-    const readFile = vi.fn(async () => planContent);
-    const awaitApproval = vi.fn(async () => {});
-    const ctx = makeMockContext({ exists, readFile, awaitApproval });
-    const step = new DependencyResolveStep(makeDefinition());
-    const result = await step.execute(ctx);
-    expect(result.status).toBe("passed");
-    expect(result.metrics.wave_count).toBe(3);
+    const tmpDir = join(tmpdir(), `dep-resolve-test-${Date.now()}`);
+    mkdirSync(tmpDir, { recursive: true });
+    try {
+      const planContent = "## Wave 0\ncomp A\n## Wave 1\ncomp B\n## Wave 2\ncomp C";
+      const exists = vi.fn(async () => true);
+      const readFile = vi.fn(async () => planContent);
+      const awaitApproval = vi.fn(async () => {});
+      const ctx = makeMockContext({ exists, readFile, awaitApproval, resolve: (p: string) => join(tmpDir, p), projectRoot: tmpDir });
+      const step = new DependencyResolveStep(makeDefinition());
+      const result = await step.execute(ctx);
+      expect(result.status).toBe("passed");
+      expect(result.metrics.wave_count).toBe(3);
+    } finally {
+      rmSync(tmpDir, { recursive: true });
+    }
+  });
+
+  it("execute includes wave-plan.json in artifacts", async () => {
+    const tmpDir = join(tmpdir(), `dep-resolve-test-${Date.now()}`);
+    mkdirSync(tmpDir, { recursive: true });
+    try {
+      const exists = vi.fn(async () => true);
+      const readFile = vi.fn(async () => "## Wave 0\n- Header\n## Wave 1\n- NavBar");
+      const awaitApproval = vi.fn(async () => {});
+      const ctx = makeMockContext({ exists, readFile, awaitApproval, resolve: (p: string) => join(tmpDir, p), projectRoot: tmpDir });
+      const step = new DependencyResolveStep(makeDefinition());
+      const result = await step.execute(ctx);
+      expect(result.artifacts).toContain(".orchestrator/wave-plan.json");
+    } finally {
+      rmSync(tmpDir, { recursive: true });
+    }
+  });
+
+  it("parseWavePlan extracts component assignments", () => {
+    const content = "## Wave 0\n- Header\n- Footer\n## Wave 1\n- NavBar\n- Sidebar\n## Wave 2\n- Dashboard";
+    const plan = parseWavePlan(content);
+    expect(plan.wave_count).toBe(3);
+    expect(plan.waves["0"]).toEqual(["Header", "Footer"]);
+    expect(plan.waves["1"]).toEqual(["NavBar", "Sidebar"]);
+    expect(plan.waves["2"]).toEqual(["Dashboard"]);
+  });
+
+  it("parseWavePlan handles empty waves", () => {
+    const content = "## Wave 0\n## Wave 1\n- OnlyComponent";
+    const plan = parseWavePlan(content);
+    expect(plan.waves["0"]).toEqual([]);
+    expect(plan.waves["1"]).toEqual(["OnlyComponent"]);
+  });
+
+  it("parseWavePlan handles asterisk bullet points", () => {
+    const content = "## Wave 0\n* CompA\n* CompB";
+    const plan = parseWavePlan(content);
+    expect(plan.waves["0"]).toEqual(["CompA", "CompB"]);
   });
 });

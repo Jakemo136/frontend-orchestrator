@@ -1,5 +1,5 @@
-import { isNeedsCommandSignal } from "../types.js";
-import type { StepResult, NeedsCommandSignal } from "../types.js";
+import { isNeedsCommandSignal, isNeedsApprovalSignal } from "../types.js";
+import type { StepResult, NeedsCommandSignal, NeedsApprovalSignal } from "../types.js";
 
 export interface ParallelTask {
   id: string;
@@ -9,7 +9,7 @@ export interface ParallelTask {
 export interface ParallelResult {
   stepId: string;
   result: StepResult;
-  signal?: NeedsCommandSignal;
+  signal?: NeedsCommandSignal | NeedsApprovalSignal;
 }
 
 export async function fanOutSteps(tasks: ParallelTask[]): Promise<ParallelResult[]> {
@@ -31,6 +31,19 @@ export async function fanOutSteps(tasks: ParallelTask[]): Promise<ParallelResult
           artifacts: [],
           metrics: {},
           message: `Paused — needs command: ${outcome.reason.command}`,
+        },
+        signal: outcome.reason,
+      };
+    }
+
+    if (isNeedsApprovalSignal(outcome.reason)) {
+      return {
+        stepId: tasks[i]!.id,
+        result: {
+          status: "failed" as const,
+          artifacts: [],
+          metrics: {},
+          message: `Paused — needs approval: ${outcome.reason.prompt}`,
         },
         signal: outcome.reason,
       };

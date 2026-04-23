@@ -47,6 +47,26 @@ describe("parseArgs", () => {
     expect(cmd.command).toBe("run");
     expect(cmd.commandResults?.size).toBe(0);
   });
+
+  it("extracts --approval-result flags", () => {
+    const result = parseArgs(["--approval-result", "dep-resolve=approved"]);
+    expect(result.approvalResults?.get("dep-resolve")).toBe(true);
+  });
+
+  it("extracts rejected --approval-result flags", () => {
+    const result = parseArgs(["--approval-result", "dep-resolve=rejected"]);
+    expect(result.approvalResults?.get("dep-resolve")).toBe(false);
+  });
+
+  it("extracts both --command-result and --approval-result flags", () => {
+    const b64 = Buffer.from(JSON.stringify({ success: true, output: "", artifacts: [] })).toString("base64");
+    const result = parseArgs([
+      "--command-result", `cmd=${b64}`,
+      "--approval-result", "step1=approved",
+    ]);
+    expect(result.commandResults?.has("cmd")).toBe(true);
+    expect(result.approvalResults?.get("step1")).toBe(true);
+  });
 });
 
 describe("getWaveCount", () => {
