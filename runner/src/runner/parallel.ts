@@ -1,4 +1,5 @@
-import type { StepResult } from "../types.js";
+import { isNeedsCommandSignal } from "../types.js";
+import type { StepResult, NeedsCommandSignal } from "../types.js";
 
 export interface ParallelTask {
   id: string;
@@ -8,6 +9,7 @@ export interface ParallelTask {
 export interface ParallelResult {
   stepId: string;
   result: StepResult;
+  signal?: NeedsCommandSignal;
 }
 
 export async function fanOutSteps(tasks: ParallelTask[]): Promise<ParallelResult[]> {
@@ -20,6 +22,20 @@ export async function fanOutSteps(tasks: ParallelTask[]): Promise<ParallelResult
 
   return settled.map((outcome, i) => {
     if (outcome.status === "fulfilled") return outcome.value;
+
+    if (isNeedsCommandSignal(outcome.reason)) {
+      return {
+        stepId: tasks[i]!.id,
+        result: {
+          status: "failed" as const,
+          artifacts: [],
+          metrics: {},
+          message: `Paused — needs command: ${outcome.reason.command}`,
+        },
+        signal: outcome.reason,
+      };
+    }
+
     return {
       stepId: tasks[i]!.id,
       result: {
