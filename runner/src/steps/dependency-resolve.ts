@@ -1,3 +1,5 @@
+import { mkdirSync, writeFileSync } from "fs";
+import { dirname } from "path";
 import { BaseStep } from "./base.js";
 import { registerStep } from "./registry.js";
 import type { StepDescription, PreflightResult, StepResult, RunContext } from "../types.js";
@@ -5,6 +7,34 @@ import type { StepDescription, PreflightResult, StepResult, RunContext } from ".
 export function countWaves(planContent: string): number {
   const matches = planContent.match(/^##\s*wave\s+\d+/gim);
   return Math.max(1, matches?.length ?? 1);
+}
+
+export interface WavePlan {
+  wave_count: number;
+  waves: Record<string, string[]>;
+}
+
+export function parseWavePlan(planContent: string): WavePlan {
+  const waveCount = countWaves(planContent);
+  const waves: Record<string, string[]> = {};
+
+  const wavePattern = /^##\s*wave\s+(\d+)/gim;
+  let match: RegExpExecArray | null;
+  const wavePositions: Array<{ index: number; waveNum: string }> = [];
+
+  while ((match = wavePattern.exec(planContent)) !== null) {
+    wavePositions.push({ index: match.index, waveNum: match[1]! });
+  }
+
+  for (let i = 0; i < wavePositions.length; i++) {
+    const start = wavePositions[i]!.index;
+    const end = i + 1 < wavePositions.length ? wavePositions[i + 1]!.index : planContent.length;
+    const section = planContent.slice(start, end);
+    const components = [...section.matchAll(/^[-*]\s+(.+)/gm)].map(m => m[1]!.trim());
+    waves[wavePositions[i]!.waveNum] = components;
+  }
+
+  return { wave_count: waveCount, waves };
 }
 
 export class DependencyResolveStep extends BaseStep {
@@ -55,13 +85,18 @@ export class DependencyResolveStep extends BaseStep {
     }
 
     const content = await ctx.readFile(planPath);
-    const waveCount = countWaves(content);
+    const wavePlan = parseWavePlan(content);
+
+    const wavePlanPath = ".orchestrator/wave-plan.json";
+    const absWavePlanPath = ctx.resolve(wavePlanPath);
+    mkdirSync(dirname(absWavePlanPath), { recursive: true });
+    writeFileSync(absWavePlanPath, JSON.stringify(wavePlan, null, 2) + "\n");
 
     return {
       status: "passed",
-      artifacts: [planPath],
-      metrics: { wave_count: waveCount },
-      message: `Build plan approved. ${waveCount} wave(s) identified.`,
+      artifacts: [planPath, wavePlanPath],
+      metrics: { wave_count: wavePlan.wave_count },
+      message: `Build plan approved. ${wavePlan.wave_count} wave(s) identified.`,
     };
   }
 }

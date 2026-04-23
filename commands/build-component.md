@@ -9,9 +9,9 @@ Build components using the TDD protocol.
 ## Wave mode: /build-component --wave N
 
 When called with `--wave N` (by the build-wave pipeline step):
-1. Read /docs/COMPONENT_INVENTORY.md
-2. Find all components assigned to wave N
-3. For each component in the wave, run the full TDD protocol below
+1. Read `.orchestrator/wave-plan.json` for the component list for wave N
+   - If the file doesn't exist, fall back to reading /docs/COMPONENT_INVENTORY.md
+2. For each component in the wave, run the full TDD protocol below
 4. Report results per component:
    | Component | Tests Written | Tests Passing | Status |
    |-----------|--------------|---------------|--------|
