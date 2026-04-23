@@ -16,6 +16,7 @@ import "./steps/e2e-scaffold.js";
 import "./steps/dependency-resolve.js";
 import "./steps/build-wave.js";
 import "./steps/test-suite.js";
+import "./steps/build-client.js";
 import "./steps/post-wave-review.js";
 import "./steps/e2e-green.js";
 import "./steps/design-audit.js";

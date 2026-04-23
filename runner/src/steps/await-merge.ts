@@ -2,11 +2,16 @@ import { BaseStep } from "./base.js";
 import { registerStep } from "./registry.js";
 import type { StepDescription, PreflightResult, StepResult, RunContext } from "../types.js";
 
+interface StatusCheck {
+  name: string;
+  state: string;
+}
+
 interface PrRecord {
   number: number;
   state: string;
   title: string;
-  statusCheckRollup: unknown[];
+  statusCheckRollup: StatusCheck[];
 }
 
 export class AwaitMergeStep extends BaseStep {
@@ -76,11 +81,47 @@ export class AwaitMergeStep extends BaseStep {
       };
     }
 
+    const requiredChecks = ctx.config.ci.required_on_feature;
+    const informationalChecks = ctx.config.ci.informational_on_feature;
+
+    const ciFailures: string[] = [];
+    const ciWarnings: string[] = [];
+
+    if (requiredChecks.length > 0 || informationalChecks.length > 0) {
+      for (const pr of prs) {
+        const checksByName = new Map(pr.statusCheckRollup.map((c) => [c.name, c.state]));
+
+        for (const check of requiredChecks) {
+          const state = checksByName.get(check);
+          if (state !== "SUCCESS" && state !== "SKIPPED") {
+            ciFailures.push(`#${pr.number}: required check "${check}" was ${state ?? "missing"}`);
+          }
+        }
+
+        for (const check of informationalChecks) {
+          const state = checksByName.get(check);
+          if (state !== "SUCCESS" && state !== "SKIPPED") {
+            ciWarnings.push(`#${pr.number}: informational check "${check}" was ${state ?? "missing"}`);
+          }
+        }
+      }
+    }
+
+    if (ciFailures.length > 0) {
+      return {
+        status: "failed",
+        artifacts: [],
+        metrics: { wave, merged_count: prs.length },
+        message: `Wave ${wave} PRs merged but required CI checks failed: ${ciFailures.join("; ")}`,
+      };
+    }
+
+    const warningNote = ciWarnings.length > 0 ? ` Warnings: ${ciWarnings.join("; ")}` : "";
     return {
       status: "passed",
       artifacts: [],
       metrics: { wave, merged_count: prs.length },
-      message: `Wave ${wave} PRs merged (${prs.length} total).`,
+      message: `Wave ${wave} PRs merged (${prs.length} total).${warningNote}`,
     };
   }
 }

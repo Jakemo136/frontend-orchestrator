@@ -1,5 +1,6 @@
 import { BaseStep } from "./base.js";
 import { registerStep } from "./registry.js";
+import { ApprovalDeniedError } from "../runner/approval.js";
 import type { StepDescription, PreflightResult, StepResult, RunContext } from "../types.js";
 
 export class MergeToMainStep extends BaseStep {
@@ -28,28 +29,61 @@ export class MergeToMainStep extends BaseStep {
     const feature = ctx.config.branches.feature;
     const main = ctx.config.branches.main;
 
-    const prResult = await ctx.exec(
-      `gh pr create --base ${main} --head ${feature} --title "Merge ${feature} to ${main}" --body "Automated PR from orchestrator"`,
+    // Check for an existing open PR to avoid creating a duplicate
+    let prUrl: string;
+    const existingPrResult = await ctx.exec(
+      `gh pr list --head ${feature} --base ${main} --state open --json number,url`,
     );
-
-    if (prResult.exitCode !== 0) {
-      return {
-        status: "failed",
-        artifacts: [],
-        metrics: {},
-        message: `Failed to create PR: ${prResult.stderr || prResult.stdout}`,
-      };
+    if (existingPrResult.exitCode === 0) {
+      let existingPrs: Array<{ number: number; url: string }> = [];
+      try {
+        existingPrs = JSON.parse(existingPrResult.stdout) as Array<{ number: number; url: string }>;
+      } catch {
+        // Parse failure — proceed to create PR
+      }
+      if (existingPrs.length > 0) {
+        prUrl = existingPrs[0]!.url;
+      } else {
+        const prResult = await ctx.exec(
+          `gh pr create --base ${main} --head ${feature} --title "Merge ${feature} to ${main}" --body "Automated PR from orchestrator"`,
+        );
+        if (prResult.exitCode !== 0) {
+          return {
+            status: "failed",
+            artifacts: [],
+            metrics: {},
+            message: `Failed to create PR: ${prResult.stderr || prResult.stdout}`,
+          };
+        }
+        prUrl = prResult.stdout.trim();
+      }
+    } else {
+      const prResult = await ctx.exec(
+        `gh pr create --base ${main} --head ${feature} --title "Merge ${feature} to ${main}" --body "Automated PR from orchestrator"`,
+      );
+      if (prResult.exitCode !== 0) {
+        return {
+          status: "failed",
+          artifacts: [],
+          metrics: {},
+          message: `Failed to create PR: ${prResult.stderr || prResult.stdout}`,
+        };
+      }
+      prUrl = prResult.stdout.trim();
     }
 
+    let parseWarning = "";
     const requiredChecks = ctx.config.ci.required_on_main;
     if (requiredChecks.length > 0) {
       const checksResult = await ctx.exec(
-        `gh pr checks --json name,state --required`,
+        `gh pr checks ${prUrl} --json name,state`,
       );
       if (checksResult.exitCode === 0) {
         try {
           const checks = JSON.parse(checksResult.stdout) as Array<{ name: string; state: string }>;
-          const failing = checks.filter((c) => c.state !== "SUCCESS" && c.state !== "SKIPPED");
+          const failing = checks
+            .filter((c) => requiredChecks.includes(c.name))
+            .filter((c) => c.state !== "SUCCESS" && c.state !== "SKIPPED");
           if (failing.length > 0) {
             const list = failing.map((c) => `${c.name} (${c.state})`).join(", ");
             return {
@@ -60,16 +94,17 @@ export class MergeToMainStep extends BaseStep {
             };
           }
         } catch {
-          // Parse failure — proceed to approval with warning
+          parseWarning = " (warning: could not parse CI check results)";
         }
       }
     }
 
     try {
       await ctx.awaitApproval(
-        `PR created from ${feature} → ${main}. Review and merge, then confirm.\n\n${prResult.stdout}`,
+        `PR created from ${feature} → ${main}. Review and merge, then confirm.\n\n${prUrl}`,
       );
-    } catch {
+    } catch (err) {
+      if (!(err instanceof ApprovalDeniedError)) throw err;
       return {
         status: "failed",
         artifacts: [],
@@ -82,7 +117,7 @@ export class MergeToMainStep extends BaseStep {
       status: "passed",
       artifacts: [],
       metrics: {},
-      message: `Feature branch ${feature} merged to ${main}.`,
+      message: `Feature branch ${feature} merged to ${main}.${parseWarning}`,
     };
   }
 }
