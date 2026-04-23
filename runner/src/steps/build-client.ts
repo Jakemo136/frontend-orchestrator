@@ -4,10 +4,11 @@ import type { StepDescription, PreflightResult, StepResult, RunContext } from ".
 
 export class BuildClientStep extends BaseStep {
   describe(): StepDescription {
+    const wave = (this.definition.params.wave as number) ?? 0;
     return {
       id: this.definition.id,
       type: "build-client",
-      summary: "Runs the production client build command.",
+      summary: `Run production client build for wave ${wave}.`,
       prerequisites: [],
       artifacts: [],
       passCondition: "Build command exits with code 0.",
