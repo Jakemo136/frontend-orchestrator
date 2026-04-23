@@ -118,7 +118,7 @@ export interface CommandResult {
 
 // ─── Approval ────────────────────────────────────────
 
-export type ApprovalMode = "auto" | "ci";
+export type ApprovalMode = "auto" | "ci" | "interactive";
 
 export interface ApprovalRecord {
   stepId: string;
@@ -144,11 +144,27 @@ export function isNeedsCommandSignal(err: unknown): err is NeedsCommandSignal {
   );
 }
 
+export interface NeedsApprovalSignal {
+  __type: "needs_approval";
+  stepId: string;
+  prompt: string;
+}
+
+export function isNeedsApprovalSignal(err: unknown): err is NeedsApprovalSignal {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "__type" in err &&
+    (err as NeedsApprovalSignal).__type === "needs_approval"
+  );
+}
+
 // ─── Runner Output ──────────────────────────────────
 export type RunnerOutput =
   | { type: "step_complete"; stepId: string; result: StepResult; nextStepId: string | null }
   | { type: "steps_complete"; results: Array<{ stepId: string; result: StepResult }>; nextStepId: string | null }
   | { type: "needs_command"; stepId: string; command: string; args?: string }
+  | { type: "needs_approval"; stepId: string; prompt: string }
   | { type: "pipeline_done" }
   | { type: "pipeline_failed"; stepId: string; result: StepResult };
 

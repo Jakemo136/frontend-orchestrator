@@ -26,6 +26,9 @@ export function createApprovalHandler(
         return;
       case "ci":
         throw new ApprovalDeniedError(prompt);
+      case "interactive":
+        // TODO: Task 2 implements full interactive handling
+        throw new Error("Interactive approval not yet implemented");
       default: {
         const _exhaustive: never = mode;
         throw new Error(`Unknown approval mode: ${_exhaustive}`);
