@@ -202,13 +202,7 @@ async function main() {
       const steps = config.steps ?? generateDefaultPipeline(config);
       const executor = new Executor(config, steps, projectRoot, cmd.commandResults);
 
-      const runnable = steps.filter((s) => s.id === cmd.stepId);
-      if (runnable.length === 0) {
-        process.stderr.write(`Unknown step: ${cmd.stepId}\n`);
-        process.exit(1);
-      }
-
-      const output = await executor.runNext();
+      const output = await executor.runStep(cmd.stepId);
       process.stdout.write(JSON.stringify(output) + "\n");
 
       if (output.type === "pipeline_failed") {
