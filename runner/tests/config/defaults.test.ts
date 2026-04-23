@@ -105,4 +105,63 @@ describe("generateDefaultPipeline", () => {
     const e2eGreen = steps.find((s) => s.id === "e2e-green");
     expect(e2eGreen!.deps).toContain("await-merge:0");
   });
+
+  it("waveCount=3 for app scope produces correct wave steps", () => {
+    const steps = generateDefaultPipeline(BASE_CONFIG, 3);
+    const ids = steps.map((s) => s.id);
+    expect(ids).toContain("build-wave:0");
+    expect(ids).toContain("build-wave:1");
+    expect(ids).toContain("build-wave:2");
+    expect(ids).toContain("test-suite:0");
+    expect(ids).toContain("test-suite:1");
+    expect(ids).toContain("test-suite:2");
+    expect(ids).toContain("await-merge:0");
+    expect(ids).toContain("await-merge:1");
+    expect(ids).toContain("await-merge:2");
+  });
+
+  it("inter-wave dependency chain", () => {
+    const steps = generateDefaultPipeline(BASE_CONFIG, 3);
+    const w0 = steps.find((s) => s.id === "build-wave:0")!;
+    const w1 = steps.find((s) => s.id === "build-wave:1")!;
+    const w2 = steps.find((s) => s.id === "build-wave:2")!;
+    expect(w0.deps).toContain("dependency-resolve");
+    expect(w1.deps).toContain("await-merge:0");
+    expect(w2.deps).toContain("await-merge:1");
+  });
+
+  it("e2e-green depends on last wave", () => {
+    const steps = generateDefaultPipeline(BASE_CONFIG, 3);
+    const e2eGreen = steps.find((s) => s.id === "e2e-green")!;
+    expect(e2eGreen.deps).toContain("await-merge:2");
+  });
+
+  it("ship phase depends on last wave (component scope)", () => {
+    const config = { ...BASE_CONFIG, scope: { type: "component" as const, target: "MyComp" } };
+    const steps = generateDefaultPipeline(config, 3);
+    const preCommit = steps.find((s) => s.id === "pre-commit-review")!;
+    expect(preCommit.deps).toContain("await-merge:2");
+  });
+
+  it("waveCount=0 clamps to 1", () => {
+    const steps = generateDefaultPipeline(BASE_CONFIG, 0);
+    const ids = steps.map((s) => s.id);
+    expect(ids).toContain("build-wave:0");
+    expect(ids).not.toContain("build-wave:1");
+  });
+
+  it("backward compat — no waveCount same as waveCount=1", () => {
+    const steps = generateDefaultPipeline(BASE_CONFIG);
+    const ids = steps.map((s) => s.id);
+    expect(ids).toContain("build-wave:0");
+    expect(ids).not.toContain("build-wave:1");
+  });
+
+  it("component scope with waveCount=2", () => {
+    const config = { ...BASE_CONFIG, scope: { type: "component" as const, target: "MyComp" } };
+    const steps = generateDefaultPipeline(config, 2);
+    const ids = steps.map((s) => s.id);
+    expect(ids).toContain("build-wave:0");
+    expect(ids).toContain("build-wave:1");
+  });
 });
