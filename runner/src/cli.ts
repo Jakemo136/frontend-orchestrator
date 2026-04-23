@@ -6,7 +6,7 @@ import { formatExplain } from "./explain/explain.js";
 import { getStepClass } from "./steps/registry.js";
 import { writeFileSync, existsSync } from "fs";
 import { join } from "path";
-import type { CommandResult } from "./types.js";
+import type { CommandResult, WorkflowState } from "./types.js";
 
 // Import all steps to trigger registration
 import "./steps/session-start.js";
@@ -77,6 +77,14 @@ export function parseArgs(args: string[]): ParsedCommand {
   return { command: "run", commandResults };
 }
 
+export function getWaveCount(state: WorkflowState): number {
+  const depResolve = state.steps["dependency-resolve"];
+  if (depResolve?.status === "passed" && depResolve.metrics.wave_count) {
+    return depResolve.metrics.wave_count;
+  }
+  return 1;
+}
+
 const TEMPLATE_CONFIG = `# orchestrator.config.yaml
 project: my-project
 
@@ -128,9 +136,9 @@ async function main() {
 
     case "explain": {
       const config = loadConfig(projectRoot);
-      const steps = config.steps ?? generateDefaultPipeline(config);
       const stateMgr = new StateManager(projectRoot);
       const state = stateMgr.load(config.project, config.scope);
+      const steps = config.steps ?? generateDefaultPipeline(config, getWaveCount(state));
       const descriptions = steps.map((stepDef) => {
         const StepClass = getStepClass(stepDef.type);
         if (!StepClass) {
@@ -168,7 +176,9 @@ async function main() {
 
     case "run": {
       const config = loadConfig(projectRoot);
-      const steps = config.steps ?? generateDefaultPipeline(config);
+      const stateMgr = new StateManager(projectRoot);
+      const state = stateMgr.load(config.project, config.scope);
+      const steps = config.steps ?? generateDefaultPipeline(config, getWaveCount(state));
       const executor = new Executor(config, steps, projectRoot, cmd.commandResults);
       const output = await executor.runParallel();
       process.stdout.write(JSON.stringify(output) + "\n");
@@ -199,7 +209,9 @@ async function main() {
         process.exit(1);
       }
       const config = loadConfig(projectRoot);
-      const steps = config.steps ?? generateDefaultPipeline(config);
+      const stateMgr = new StateManager(projectRoot);
+      const state = stateMgr.load(config.project, config.scope);
+      const steps = config.steps ?? generateDefaultPipeline(config, getWaveCount(state));
       const executor = new Executor(config, steps, projectRoot, cmd.commandResults);
 
       const output = await executor.runStep(cmd.stepId);
