@@ -4,6 +4,7 @@ const { z } = require('zod')
 const { chromium } = require('playwright')
 const path = require('path')
 const fs = require('fs')
+const { diffImages } = require('./diff.js')
 
 const DEFAULT_BREAKPOINTS = {
   mobile:     { width: 375,  height: 812  },
@@ -111,6 +112,71 @@ server.tool(
 
     return {
       content: [{ type: 'text', text: JSON.stringify(output, null, 2) }]
+    }
+  }
+)
+
+server.tool(
+  'compare',
+  'Compare current screenshots against baseline — returns pixel diff percentage per breakpoint',
+  {
+    route: z.string().describe('Route name to compare'),
+    threshold: z.number().default(0.5).describe('Max allowed diff percentage before flagging regression'),
+    saveDiffs: z.boolean().default(true).describe('Save diff images to screenshots/diffs/')
+  },
+  async ({ route, threshold, saveDiffs }) => {
+    const screenshotsDir = path.join(process.cwd(), 'screenshots')
+    const routeDir = path.join(screenshotsDir, route)
+    const baselineDir = path.join(screenshotsDir, 'baseline', route)
+    const diffDir = path.join(screenshotsDir, 'diffs', route)
+
+    const results = {}
+    let hasRegression = false
+
+    for (const breakpoint of Object.keys(DEFAULT_BREAKPOINTS)) {
+      const currentPath = path.join(routeDir, `${breakpoint}.png`)
+      const baselinePath = path.join(baselineDir, `${breakpoint}.png`)
+
+      if (!fs.existsSync(currentPath)) {
+        results[breakpoint] = { status: 'missing', error: 'Current screenshot not found' }
+        continue
+      }
+
+      if (!fs.existsSync(baselinePath)) {
+        results[breakpoint] = { status: 'no_baseline', error: 'No baseline to compare against' }
+        continue
+      }
+
+      try {
+        const diffPath = saveDiffs ? path.join(diffDir, `${breakpoint}-diff.png`) : null
+        const diff = diffImages(baselinePath, currentPath, diffPath)
+
+        const regressed = diff.diffPercentage > threshold
+        if (regressed) hasRegression = true
+
+        results[breakpoint] = {
+          status: regressed ? 'regression' : 'pass',
+          diffPercentage: diff.diffPercentage,
+          mismatchedPixels: diff.mismatchedPixels,
+          totalPixels: diff.totalPixels,
+          dimensionMismatch: diff.dimensionMismatch,
+          diffImage: diffPath,
+        }
+      } catch (err) {
+        results[breakpoint] = { status: 'error', error: err.message }
+      }
+    }
+
+    return {
+      content: [{
+        type: 'text',
+        text: JSON.stringify({
+          route,
+          threshold,
+          hasRegression,
+          breakpoints: results
+        }, null, 2)
+      }]
     }
   }
 )
