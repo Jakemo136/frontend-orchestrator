@@ -2,6 +2,11 @@ import { BaseStep } from "./base.js";
 import { registerStep } from "./registry.js";
 import type { StepDescription, PreflightResult, StepResult, RunContext } from "../types.js";
 
+export function countWaves(planContent: string): number {
+  const matches = planContent.match(/^##\s*[Ww]ave\s+\d+/gm);
+  return Math.max(1, matches?.length ?? 1);
+}
+
 export class DependencyResolveStep extends BaseStep {
   describe(): StepDescription {
     return {
@@ -49,11 +54,14 @@ export class DependencyResolveStep extends BaseStep {
       };
     }
 
+    const content = await ctx.readFile(planPath);
+    const waveCount = countWaves(content);
+
     return {
       status: "passed",
       artifacts: [planPath],
-      metrics: {},
-      message: "Build plan approved.",
+      metrics: { wave_count: waveCount },
+      message: `Build plan approved. ${waveCount} wave(s) identified.`,
     };
   }
 }
