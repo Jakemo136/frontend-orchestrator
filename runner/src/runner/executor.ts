@@ -30,72 +30,7 @@ export class Executor {
   async runNext(): Promise<RunnerOutput> {
     const runnable = getRunnable(this.steps, this.state);
     if (runnable.length === 0) return { type: "pipeline_done" };
-
-    const stepDef = runnable[0]!;
-    const StepClass = getStepClass(stepDef.type);
-
-    if (!StepClass) {
-      const result: StepResult = {
-        status: "failed",
-        artifacts: [],
-        metrics: {},
-        message: `Unknown step type: ${stepDef.type}`,
-      };
-      this.persistAndFail(stepDef.id, result);
-      return { type: "pipeline_failed", stepId: stepDef.id, result };
-    }
-
-    const step = new StepClass(stepDef);
-
-    if (step.shouldSkip(this.config.scope.type)) {
-      const result: StepResult = {
-        status: "skipped",
-        artifacts: [],
-        metrics: {},
-        message: `Skipped — below scope threshold for ${this.config.scope.type}`,
-      };
-      this.persistAndComplete(stepDef.id, result);
-      return this.completeStep(stepDef.id, result);
-    }
-
-    const ctx = createRunContext(
-      this.config,
-      this.state,
-      this.projectRoot,
-      this.stateManager,
-      this.commandResults,
-    );
-
-    const preflight = await step.preflight(ctx);
-    if (!preflight.ready) {
-      const result: StepResult = {
-        status: "failed",
-        artifacts: [],
-        metrics: {},
-        message: `Preflight failed: ${preflight.issues.join("; ")}`,
-      };
-      this.persistAndFail(stepDef.id, result);
-      return { type: "pipeline_failed", stepId: stepDef.id, result };
-    }
-
-    this.stateManager.markInProgress(this.state, stepDef.id);
-    this.stateManager.save(this.state);
-
-    try {
-      const result = await step.execute(ctx);
-      this.persistAndComplete(stepDef.id, result);
-
-      if (result.status === "failed") {
-        return { type: "pipeline_failed", stepId: stepDef.id, result };
-      }
-
-      return this.completeStep(stepDef.id, result);
-    } catch (err) {
-      if (isNeedsCommandSignal(err)) {
-        return { type: "needs_command", stepId: stepDef.id, command: err.command, args: err.args };
-      }
-      throw err;
-    }
+    return this.executeStepDef(runnable[0]!);
   }
 
   async runStep(stepId: string): Promise<RunnerOutput> {
@@ -109,8 +44,12 @@ export class Executor {
       };
       return { type: "pipeline_failed", stepId, result };
     }
+    return this.executeStepDef(stepDef);
+  }
 
+  private async executeStepDef(stepDef: StepDefinition): Promise<RunnerOutput> {
     const StepClass = getStepClass(stepDef.type);
+
     if (!StepClass) {
       const result: StepResult = {
         status: "failed",

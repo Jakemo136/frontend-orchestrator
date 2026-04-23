@@ -46,8 +46,30 @@ class TrackingStep extends BaseStep {
   }
 }
 
-// Register the test step type
+class FailingPreflightStep extends BaseStep {
+  describe(): StepDescription {
+    return {
+      id: this.definition.id,
+      type: "failing-preflight",
+      summary: "Always fails preflight",
+      prerequisites: [],
+      artifacts: [],
+      passCondition: "never",
+      failCondition: "always",
+      scope: "component",
+    };
+  }
+  async preflight(): Promise<PreflightResult> {
+    return { ready: false, issues: ["missing required artifact", "config invalid"] };
+  }
+  async execute(): Promise<StepResult> {
+    return { status: "passed", artifacts: [], metrics: {}, message: "should not reach here" };
+  }
+}
+
+// Register the test step types
 registerStep("tracking", TrackingStep);
+registerStep("failing-preflight", FailingPreflightStep);
 
 const CONFIG: OrchestratorConfig = {
   project: "test-run-step",
@@ -144,6 +166,28 @@ describe("Executor.runStep()", () => {
       if (result.type === "step_complete") {
         expect(result.stepId).toBe("child");
         expect(result.result.status).toBe("passed");
+      }
+    } finally {
+      rmSync(dir, { recursive: true });
+    }
+  });
+
+  it("returns pipeline_failed when a step's preflight returns ready: false", async () => {
+    const dir = makeTempDir();
+    try {
+      const steps: StepDefinition[] = [
+        { id: "needs-preflight", type: "failing-preflight", deps: [], params: {} },
+      ];
+      const executor = new Executor(CONFIG, steps, dir);
+
+      const result = await executor.runStep("needs-preflight");
+
+      expect(result.type).toBe("pipeline_failed");
+      if (result.type === "pipeline_failed") {
+        expect(result.stepId).toBe("needs-preflight");
+        expect(result.result.status).toBe("failed");
+        expect(result.result.message).toContain("Preflight failed");
+        expect(result.result.message).toContain("missing required artifact");
       }
     } finally {
       rmSync(dir, { recursive: true });
