@@ -10,5 +10,8 @@ mcp/screenshot-review/node_modules/
 # Runtime / orchestrator state
 .orchestrator/
 
+# Worktrees
+.worktrees/
+
 # OS
 .DS_Store
