@@ -39,7 +39,8 @@ export function generateDefaultPipeline(
     const dep = w === 0 ? waveDep : `await-merge:${w - 1}`;
     add(`build-wave:${w}`, "build-wave", [dep], { wave: w }, "component");
     add(`test-suite:${w}`, "test-suite", [`build-wave:${w}`], { wave: w, e2e_blocking: false }, "component");
-    add(`post-wave-review:${w}`, "post-wave-review", [`test-suite:${w}`], { wave: w }, "component");
+    add(`build-client:${w}`, "build-client", [`test-suite:${w}`], { wave: w }, "component");
+    add(`post-wave-review:${w}`, "post-wave-review", [`build-client:${w}`], { wave: w }, "component");
     add(`open-prs:${w}`, "open-prs", [`post-wave-review:${w}`], { wave: w }, "component");
     add(`await-merge:${w}`, "await-merge", [`open-prs:${w}`], { wave: w }, "component");
   }
@@ -50,7 +51,7 @@ export function generateDefaultPipeline(
   add("e2e-green", "e2e-green", [`await-merge:${lastWave}`], {}, "page");
   add("design-audit", "design-audit", ["e2e-green"], {}, "page");
   add("visual-qa", "visual-qa", ["design-audit"], {}, "page");
-  add("set-baseline", "set-baseline", ["design-audit"], {}, "page");
+  add("set-baseline", "set-baseline", ["visual-qa"], {}, "page");
 
   // Phase 5: Ship
   const shipDeps =

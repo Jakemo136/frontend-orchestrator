@@ -164,4 +164,10 @@ describe("generateDefaultPipeline", () => {
     expect(ids).toContain("build-wave:0");
     expect(ids).toContain("build-wave:1");
   });
+
+  it("set-baseline depends on visual-qa", () => {
+    const steps = generateDefaultPipeline(BASE_CONFIG);
+    const setBaseline = steps.find((s) => s.id === "set-baseline")!;
+    expect(setBaseline.deps).toContain("visual-qa");
+  });
 });
