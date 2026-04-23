@@ -57,10 +57,14 @@ ci:
 |---|---|
 | `/session-start` | Reorient at the start of a session |
 | `/ui-interview` | Requirements interview — produces UI_REQUIREMENTS.md and COMPONENT_INVENTORY.md |
-| `/build-component [Name]` | Build one component TDD-style |
+| `/user-story-generation` | Generate PM-voice user stories with data flow annotations for all interactive flows |
+| `/build-component [Name]` | Build one component TDD-style (also accepts `--wave N` for pipeline use) |
 | `/build-page [Page]` | Build all components for a page, parallelized by dependency wave |
 | `/build-pipeline` | Full autonomous build: E2E tests, dependency waves, audits, PRs |
 | `/review-requirements` | Summarize build state, suggest next step |
+| `/code-review` | Dispatch `superpowers:code-reviewer` against recent changes |
+| `/code-simplify` | Dispatch `code-simplifier:code-simplifier` against recent changes |
+| `/wiring-audit` | Verify integration test coverage for parent-child component relationships |
 | `/design-audit [route?]` | A11y + design audit at all breakpoints, auto-fix critical issues |
 | `/visual-qa [route?]` | UX quality review — Nielsen's heuristics, Gestalt, frustration signals |
 | `/set-baseline [route?]` | Promote screenshots to visual regression baseline |
@@ -93,7 +97,7 @@ Each phase gates on the previous. The pipeline resumes from any checkpoint. With
 
 ```
 frontend-orchestration/
-  commands/       9 slash commands
+  commands/       13 slash commands
   subagents/      8 specialized agents (component-builder, e2e-writer, etc.)
   runner/         DAG executor, state machine, evidence pipeline, step implementations
   mcp/            2 MCP servers (a11y-scanner, screenshot-review + visual regression)
