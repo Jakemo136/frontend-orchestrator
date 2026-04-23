@@ -1,6 +1,6 @@
 // src/runner/context.ts
 import { join } from "path";
-import { existsSync } from "fs";
+import { existsSync, readFileSync } from "fs";
 import { exec as execCb } from "child_process";
 import { promisify } from "util";
 import { StateManager } from "../state/state.js";
@@ -38,6 +38,10 @@ export function createRunContext(
 
     async exists(path: string): Promise<boolean> {
       return existsSync(join(projectRoot, path));
+    },
+
+    async readFile(path: string): Promise<string> {
+      return readFileSync(join(projectRoot, path), "utf-8");
     },
 
     async exec(cmd: string, opts?: ExecOpts): Promise<ExecResult> {
