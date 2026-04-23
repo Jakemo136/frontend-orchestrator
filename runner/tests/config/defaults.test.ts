@@ -170,4 +170,29 @@ describe("generateDefaultPipeline", () => {
     const setBaseline = steps.find((s) => s.id === "set-baseline")!;
     expect(setBaseline.deps).toContain("visual-qa");
   });
+
+  it("pipeline contains build-client:0 for single wave", () => {
+    const steps = generateDefaultPipeline(BASE_CONFIG);
+    const ids = steps.map((s) => s.id);
+    expect(ids).toContain("build-client:0");
+  });
+
+  it("build-client:N depends on test-suite:N", () => {
+    const steps = generateDefaultPipeline(BASE_CONFIG, 3);
+    for (let w = 0; w < 3; w++) {
+      const buildClient = steps.find((s) => s.id === `build-client:${w}`)!;
+      expect(buildClient).toBeDefined();
+      expect(buildClient.deps).toContain(`test-suite:${w}`);
+    }
+  });
+
+  it("post-wave-review:N depends on build-client:N", () => {
+    const steps = generateDefaultPipeline(BASE_CONFIG, 3);
+    for (let w = 0; w < 3; w++) {
+      const postWave = steps.find((s) => s.id === `post-wave-review:${w}`)!;
+      expect(postWave).toBeDefined();
+      expect(postWave.deps).toContain(`build-client:${w}`);
+      expect(postWave.deps).not.toContain(`test-suite:${w}`);
+    }
+  });
 });
