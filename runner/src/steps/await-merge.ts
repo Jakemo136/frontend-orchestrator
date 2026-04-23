@@ -2,6 +2,13 @@ import { BaseStep } from "./base.js";
 import { registerStep } from "./registry.js";
 import type { StepDescription, PreflightResult, StepResult, RunContext } from "../types.js";
 
+interface PrRecord {
+  number: number;
+  state: string;
+  title: string;
+  statusCheckRollup: unknown[];
+}
+
 export class AwaitMergeStep extends BaseStep {
   describe(): StepDescription {
     const wave = (this.definition.params.wave as number) ?? 0;
@@ -12,7 +19,7 @@ export class AwaitMergeStep extends BaseStep {
       prerequisites: [],
       artifacts: [],
       passCondition: "All PRs for the wave are merged.",
-      failCondition: "User declines or PRs remain unmerged.",
+      failCondition: "PRs remain unmerged or cannot be validated.",
       scope: "component",
     };
   }
@@ -23,26 +30,57 @@ export class AwaitMergeStep extends BaseStep {
 
   async execute(ctx: RunContext): Promise<StepResult> {
     const wave = (this.definition.params.wave as number) ?? 0;
-    const prList = await ctx.exec(`gh pr list --label "wave-${wave}" --json number,state`);
 
+    const prList = await ctx.exec(
+      `gh pr list --label "wave-${wave}" --json number,state,title,statusCheckRollup`,
+    );
+
+    if (prList.exitCode !== 0) {
+      return {
+        status: "failed",
+        artifacts: [],
+        metrics: { wave },
+        message: `gh pr list failed: ${prList.stderr || prList.stdout}`,
+      };
+    }
+
+    let prs: PrRecord[];
     try {
-      await ctx.awaitApproval(
-        `Merge all wave ${wave} PRs, then confirm.\n\nCurrent PR status:\n${prList.stdout}`,
-      );
+      prs = JSON.parse(prList.stdout) as PrRecord[];
     } catch {
       return {
         status: "failed",
         artifacts: [],
         metrics: { wave },
-        message: `User declined to merge wave ${wave} PRs.`,
+        message: `Failed to parse gh pr list output: ${prList.stdout}`,
+      };
+    }
+
+    if (prs.length === 0) {
+      return {
+        status: "failed",
+        artifacts: [],
+        metrics: { wave },
+        message: `No PRs found for wave ${wave}`,
+      };
+    }
+
+    const unmerged = prs.filter((pr) => pr.state !== "MERGED");
+    if (unmerged.length > 0) {
+      const list = unmerged.map((pr) => `#${pr.number} "${pr.title}" (${pr.state})`).join(", ");
+      return {
+        status: "failed",
+        artifacts: [],
+        metrics: { wave, unmerged_count: unmerged.length },
+        message: `Wave ${wave} PRs not yet merged: ${list}`,
       };
     }
 
     return {
       status: "passed",
       artifacts: [],
-      metrics: { wave },
-      message: `Wave ${wave} PRs merged.`,
+      metrics: { wave, merged_count: prs.length },
+      message: `Wave ${wave} PRs merged (${prs.length} total).`,
     };
   }
 }

@@ -4,6 +4,8 @@ import { createRunContext } from "./context.js";
 import { StateManager } from "../state/state.js";
 import { getStepClass } from "../steps/registry.js";
 import { isNeedsCommandSignal } from "../types.js";
+import { fanOutSteps } from "./parallel.js";
+import type { ParallelTask } from "./parallel.js";
 import type {
   OrchestratorConfig,
   StepDefinition,
@@ -30,8 +32,93 @@ export class Executor {
   async runNext(): Promise<RunnerOutput> {
     const runnable = getRunnable(this.steps, this.state);
     if (runnable.length === 0) return { type: "pipeline_done" };
+    return this.executeStepDef(runnable[0]!);
+  }
 
-    const stepDef = runnable[0]!;
+  async runParallel(): Promise<RunnerOutput> {
+    const runnable = getRunnable(this.steps, this.state);
+    if (runnable.length === 0) return { type: "pipeline_done" };
+    if (runnable.length === 1) return this.runNext();
+
+    const tasks: ParallelTask[] = [];
+    for (const stepDef of runnable) {
+      const StepClass = getStepClass(stepDef.type);
+      if (!StepClass) continue;
+
+      const step = new StepClass(stepDef);
+      if (step.shouldSkip(this.config.scope.type)) {
+        const result: StepResult = {
+          status: "skipped",
+          artifacts: [],
+          metrics: {},
+          message: `Skipped — below scope threshold`,
+        };
+        this.persistAndComplete(stepDef.id, result);
+        continue;
+      }
+
+      const ctx = createRunContext(
+        this.config,
+        this.state,
+        this.projectRoot,
+        this.stateManager,
+        this.commandResults,
+        stepDef.id,
+      );
+
+      this.stateManager.markInProgress(this.state, stepDef.id);
+
+      tasks.push({
+        id: stepDef.id,
+        run: async () => {
+          const preflight = await step.preflight(ctx);
+          if (!preflight.ready) {
+            return {
+              status: "failed" as const,
+              artifacts: [],
+              metrics: {},
+              message: `Preflight failed: ${preflight.issues.join("; ")}`,
+            };
+          }
+          return step.execute(ctx);
+        },
+      });
+    }
+
+    if (tasks.length === 0) return { type: "pipeline_done" };
+
+    this.stateManager.save(this.state);
+    const results = await fanOutSteps(tasks);
+
+    for (const { stepId, result } of results) {
+      this.persistAndComplete(stepId, result);
+    }
+
+    const failed = results.find((r) => r.result.status === "failed");
+    if (failed) {
+      return { type: "pipeline_failed", stepId: failed.stepId, result: failed.result };
+    }
+
+    const nextRunnable = getRunnable(this.steps, this.state);
+    const nextStepId = nextRunnable.length > 0 ? nextRunnable[0]!.id : null;
+    return { type: "steps_complete", results, nextStepId };
+  }
+
+  async runStep(stepId: string): Promise<RunnerOutput> {
+    const stepDef = this.steps.find((s) => s.id === stepId);
+    if (!stepDef) {
+      const result: StepResult = {
+        status: "failed",
+        artifacts: [],
+        metrics: {},
+        message: `Unknown step: ${stepId}`,
+      };
+      return { type: "pipeline_failed", stepId, result };
+    }
+    return this.executeStepDef(stepDef);
+  }
+
+  private async executeStepDef(stepDef: StepDefinition): Promise<RunnerOutput> {
     const StepClass = getStepClass(stepDef.type);
 
     if (!StepClass) {
@@ -64,6 +151,7 @@ export class Executor {
       this.projectRoot,
       this.stateManager,
       this.commandResults,
+      stepDef.id,
     );
 
     const preflight = await step.preflight(ctx);

@@ -41,6 +41,30 @@ export class MergeToMainStep extends BaseStep {
       };
     }
 
+    const requiredChecks = ctx.config.ci.required_on_main;
+    if (requiredChecks.length > 0) {
+      const checksResult = await ctx.exec(
+        `gh pr checks --json name,state --required`,
+      );
+      if (checksResult.exitCode === 0) {
+        try {
+          const checks = JSON.parse(checksResult.stdout) as Array<{ name: string; state: string }>;
+          const failing = checks.filter((c) => c.state !== "SUCCESS" && c.state !== "SKIPPED");
+          if (failing.length > 0) {
+            const list = failing.map((c) => `${c.name} (${c.state})`).join(", ");
+            return {
+              status: "failed",
+              artifacts: [],
+              metrics: { failing_checks: failing.length },
+              message: `Required CI checks failing: ${list}`,
+            };
+          }
+        } catch {
+          // Parse failure — proceed to approval with warning
+        }
+      }
+    }
+
     try {
       await ctx.awaitApproval(
         `PR created from ${feature} → ${main}. Review and merge, then confirm.\n\n${prResult.stdout}`,

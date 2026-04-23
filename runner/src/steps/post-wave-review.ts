@@ -21,17 +21,17 @@ export class PostWaveReviewStep extends BaseStep {
   }
 
   async execute(ctx: RunContext): Promise<StepResult> {
-    const review = await ctx.invokeCommand("/code-review");
-    const simplify = await ctx.invokeCommand("/code-simplify");
-    const audit = await ctx.invokeCommand("/design-audit");
+    const [review, simplify, audit, wiringAudit] = await Promise.all([
+      ctx.invokeCommand("/code-review"),
+      ctx.invokeCommand("/code-simplify"),
+      ctx.invokeCommand("/design-audit"),
+      ctx.invokeCommand("/wiring-audit"),
+    ]);
 
     const failures: string[] = [];
     if (!review.success) failures.push("code-review");
     if (!simplify.success) failures.push("code-simplify");
     if (!audit.success) failures.push("design-audit");
-
-    // Wiring audit: verify integration tests exist for parent-child edges
-    const wiringAudit = await ctx.invokeCommand("/wiring-audit");
     if (!wiringAudit.success) failures.push("wiring-audit");
 
     if (failures.length > 0) {
@@ -39,7 +39,7 @@ export class PostWaveReviewStep extends BaseStep {
         status: "failed",
         artifacts: audit.artifacts,
         metrics: { review_issues: failures.length },
-        message: `Issues found in: ${failures.join(", ")}. ${wiringAudit.success ? "" : "Missing wiring tests for parent-child prop flows."}`,
+        message: `Issues found in: ${failures.join(", ")}.`,
       };
     }
 

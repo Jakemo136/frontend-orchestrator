@@ -30,6 +30,8 @@ const designAuditConfigSchema = z.object({
   wcag_target: z.string().default("WCAG22AA"),
 });
 
+const approvalModeSchema = z.enum(["interactive", "auto", "ci"]).default("auto");
+
 const stepDefinitionSchema = z.object({
   id: z.string().min(1),
   type: z.string().min(1),
@@ -69,6 +71,7 @@ export const configSchema = z.object({
   evidence: evidenceConfigSchema.default({}),
   design_audit: designAuditConfigSchema.default({}),
   steps: z.array(stepDefinitionSchema).optional(),
+  approval_mode: approvalModeSchema,
 });
 
 export type ValidatedConfig = z.infer<typeof configSchema>;

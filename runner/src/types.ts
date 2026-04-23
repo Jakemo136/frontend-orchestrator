@@ -50,6 +50,7 @@ export interface OrchestratorConfig {
   dev_server_url: string;
   evidence: EvidenceConfig;
   steps?: StepDefinition[];
+  approval_mode?: ApprovalMode;
 }
 
 // ─── Step Definition (from config) ───────────────────
@@ -115,6 +116,17 @@ export interface CommandResult {
   error?: string;
 }
 
+// ─── Approval ────────────────────────────────────────
+
+export type ApprovalMode = "interactive" | "auto" | "ci";
+
+export interface ApprovalRecord {
+  stepId: string;
+  prompt: string;
+  mode: ApprovalMode;
+  approved_at: string;
+}
+
 // ─── Command Signal ─────────────────────────────────
 export interface NeedsCommandSignal {
   __type: "needs_command";
@@ -135,6 +147,7 @@ export function isNeedsCommandSignal(err: unknown): err is NeedsCommandSignal {
 // ─── Runner Output ──────────────────────────────────
 export type RunnerOutput =
   | { type: "step_complete"; stepId: string; result: StepResult; nextStepId: string | null }
+  | { type: "steps_complete"; results: Array<{ stepId: string; result: StepResult }>; nextStepId: string | null }
   | { type: "needs_command"; stepId: string; command: string; args?: string }
   | { type: "pipeline_done" }
   | { type: "pipeline_failed"; stepId: string; result: StepResult };
@@ -181,4 +194,5 @@ export interface WorkflowState {
   updated_at: string;
   steps: Record<string, StepState>;
   artifact_hashes?: Record<string, string>;
+  approvals?: ApprovalRecord[];
 }

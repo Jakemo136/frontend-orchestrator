@@ -27,10 +27,11 @@ describe("PostWaveReviewStep", () => {
   });
 
   it("execute fails when a reviewer finds critical issues", async () => {
-    let callCount = 0;
-    const invokeCommand = vi.fn(async () => {
-      callCount++;
-      return { success: callCount !== 2, output: "", artifacts: [], error: callCount === 2 ? "issues" : undefined };
+    const invokeCommand = vi.fn(async (cmd: string) => {
+      if (cmd === "/code-simplify") {
+        return { success: false, output: "", artifacts: [], error: "issues" };
+      }
+      return { success: true, output: "", artifacts: [] };
     });
     const ctx = makeMockContext({ invokeCommand });
     const step = new PostWaveReviewStep(makeDefinition());
@@ -40,17 +41,16 @@ describe("PostWaveReviewStep", () => {
   });
 
   it("execute fails when wiring audit fails", async () => {
-    let callCount = 0;
-    const invokeCommand = vi.fn(async () => {
-      callCount++;
-      // First 3 succeed (code-review, code-simplify, design-audit), 4th (wiring-audit) fails
-      return { success: callCount !== 4, output: "", artifacts: [], error: callCount === 4 ? "missing wiring" : undefined };
+    const invokeCommand = vi.fn(async (cmd: string) => {
+      if (cmd === "/wiring-audit") {
+        return { success: false, output: "", artifacts: [], error: "missing wiring" };
+      }
+      return { success: true, output: "", artifacts: [] };
     });
     const ctx = makeMockContext({ invokeCommand });
     const step = new PostWaveReviewStep(makeDefinition());
     const result = await step.execute(ctx);
     expect(result.status).toBe("failed");
     expect(result.message).toContain("wiring-audit");
-    expect(result.message).toContain("Missing wiring tests");
   });
 });

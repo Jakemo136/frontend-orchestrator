@@ -54,4 +54,23 @@ describe("MergeToMainStep", () => {
     expect(result.status).toBe("failed");
     expect(result.message).toContain("declined");
   });
+
+  it("execute fails when required CI checks are failing", async () => {
+    const failingChecks = [
+      { name: "build", state: "FAILURE" },
+      { name: "lint", state: "PENDING" },
+    ];
+    const exec = vi.fn()
+      .mockResolvedValueOnce({ exitCode: 0, stdout: "https://github.com/test/pr/1", stderr: "", timedOut: false })
+      .mockResolvedValueOnce({ exitCode: 0, stdout: JSON.stringify(failingChecks), stderr: "", timedOut: false });
+    const awaitApproval = vi.fn(async () => {});
+    const ctx = makeMockContext({ exec, awaitApproval });
+    ctx.config.ci.required_on_main = ["build", "lint"];
+    const step = new MergeToMainStep(makeDefinition());
+    const result = await step.execute(ctx);
+    expect(result.status).toBe("failed");
+    expect(result.message).toContain("build");
+    expect(result.message).toContain("lint");
+    expect(result.metrics).toMatchObject({ failing_checks: 2 });
+  });
 });
