@@ -58,10 +58,10 @@ describe("generateDefaultPipeline", () => {
     expect(ids).not.toContain("merge-to-main");
   });
 
-  it("wires dependency-resolve after user-story-generation", () => {
+  it("wires dependency-resolve after e2e-scaffold", () => {
     const steps = generateDefaultPipeline(BASE_CONFIG);
     const depResolve = steps.find((s) => s.id === "dependency-resolve")!;
-    expect(depResolve.deps).toContain("user-story-generation");
+    expect(depResolve.deps).toContain("e2e-scaffold");
   });
 
   it("wires e2e-scaffold after user-story-generation (parallel with dependency-resolve)", () => {

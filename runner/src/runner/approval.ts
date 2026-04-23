@@ -26,6 +26,10 @@ export function createApprovalHandler(
         return;
       case "ci":
         throw new ApprovalDeniedError(prompt);
+      default: {
+        const _exhaustive: never = mode;
+        throw new Error(`Unknown approval mode: ${_exhaustive}`);
+      }
     }
   };
 }

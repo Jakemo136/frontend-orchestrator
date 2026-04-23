@@ -113,9 +113,12 @@ else
 import json
 with open('$HOOKS_SOURCE') as f: hooks = json.load(f)
 with open('$SETTINGS_FILE', 'w') as f: json.dump({'hooks': hooks['hooks']}, f, indent=2)
-" 2>/dev/null || echo '{"hooks":{}}' > "$SETTINGS_FILE"
+print('  ✓ Hooks installed into .claude/settings.json')
+" 2>/dev/null || {
+        echo "  ✗ Neither jq nor python3 found. Install hooks manually."
+        echo "  See setup/install-hooks.md for instructions."
+      }
     fi
-    echo "  ✓ Hooks installed into .claude/settings.json"
   else
     echo "  Skipped. Run later with: see setup/install-hooks.md"
   fi
