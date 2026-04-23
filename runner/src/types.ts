@@ -161,6 +161,7 @@ export interface RunContext {
   scope: PipelineScope;
   resolve(path: string): string;
   exists(path: string): Promise<boolean>;
+  readFile(path: string): Promise<string>;
   exec(cmd: string, opts?: ExecOpts): Promise<ExecResult>;
   invokeCommand(command: string, args?: string): Promise<CommandResult>;
   awaitApproval(prompt: string): Promise<void>;

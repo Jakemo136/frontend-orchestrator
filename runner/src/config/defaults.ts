@@ -3,6 +3,7 @@ import { scopeMeetsThreshold } from "../types.js";
 
 export function generateDefaultPipeline(
   config: OrchestratorConfig,
+  waveCount: number = 1,
 ): StepDefinition[] {
   const s = config.scope.type;
   const steps: StepDefinition[] = [];
@@ -30,16 +31,23 @@ export function generateDefaultPipeline(
   add("dependency-resolve", "dependency-resolve", ["e2e-scaffold"], {}, "page");
 
   // Phase 3: Build waves — component/feature depend on ui-interview; page/app depend on dependency-resolve
+  const effectiveWaves = Math.max(1, Math.floor(waveCount));
   const waveDep =
     s === "component" || s === "feature" ? "ui-interview" : "dependency-resolve";
-  add("build-wave:0", "build-wave", [waveDep], { wave: 0 }, "component");
-  add("test-suite:0", "test-suite", ["build-wave:0"], { wave: 0, e2e_blocking: false }, "component");
-  add("post-wave-review:0", "post-wave-review", ["test-suite:0"], { wave: 0 }, "component");
-  add("open-prs:0", "open-prs", ["post-wave-review:0"], { wave: 0 }, "component");
-  add("await-merge:0", "await-merge", ["open-prs:0"], { wave: 0 }, "component");
+
+  for (let w = 0; w < effectiveWaves; w++) {
+    const dep = w === 0 ? waveDep : `await-merge:${w - 1}`;
+    add(`build-wave:${w}`, "build-wave", [dep], { wave: w }, "component");
+    add(`test-suite:${w}`, "test-suite", [`build-wave:${w}`], { wave: w, e2e_blocking: false }, "component");
+    add(`post-wave-review:${w}`, "post-wave-review", [`test-suite:${w}`], { wave: w }, "component");
+    add(`open-prs:${w}`, "open-prs", [`post-wave-review:${w}`], { wave: w }, "component");
+    add(`await-merge:${w}`, "await-merge", [`open-prs:${w}`], { wave: w }, "component");
+  }
+
+  const lastWave = effectiveWaves - 1;
 
   // Phase 4: Quality — e2e-green runs after build waves complete
-  add("e2e-green", "e2e-green", ["await-merge:0"], {}, "page");
+  add("e2e-green", "e2e-green", [`await-merge:${lastWave}`], {}, "page");
   add("design-audit", "design-audit", ["e2e-green"], {}, "page");
   add("visual-qa", "visual-qa", ["design-audit"], {}, "page");
   add("set-baseline", "set-baseline", ["design-audit"], {}, "page");
@@ -47,7 +55,7 @@ export function generateDefaultPipeline(
   // Phase 5: Ship
   const shipDeps =
     s === "component" || s === "feature"
-      ? ["await-merge:0"]
+      ? [`await-merge:${lastWave}`]
       : ["visual-qa", "set-baseline"];
   add("pre-commit-review", "pre-commit-review", shipDeps, {}, "component");
   add("merge-to-main", "merge-to-main", ["pre-commit-review"], {}, "app");

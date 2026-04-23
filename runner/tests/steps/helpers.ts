@@ -46,6 +46,7 @@ export function makeMockContext(overrides: Partial<RunContext> = {}): RunContext
     scope: { type: "app", target: null },
     resolve: (p) => `/tmp/test/${p}`,
     exists: vi.fn(async () => false),
+    readFile: vi.fn(async () => ""),
     exec: vi.fn(async () => ({ exitCode: 0, stdout: "", stderr: "", timedOut: false })),
     invokeCommand: vi.fn(async () => ({ success: true, output: "", artifacts: [] })),
     awaitApproval: vi.fn(async () => {}),
