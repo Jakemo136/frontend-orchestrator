@@ -12,7 +12,7 @@ When called with `--wave N` (by the build-wave pipeline step):
 1. Read `.orchestrator/wave-plan.json` for the component list for wave N
    - If the file doesn't exist, fall back to reading /docs/COMPONENT_INVENTORY.md
 2. For each component in the wave, run the full TDD protocol below
-4. Report results per component:
+3. Report results per component:
    | Component | Tests Written | Tests Passing | Status |
    |-----------|--------------|---------------|--------|
 

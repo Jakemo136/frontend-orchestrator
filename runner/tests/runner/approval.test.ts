@@ -32,7 +32,7 @@ describe("createApprovalHandler", () => {
     const state = makeState();
     const handler = createApprovalHandler("ci", state, "ci-step");
     await expect(handler("Needs approval")).rejects.toThrow(ApprovalDeniedError);
-    await expect(handler("Needs approval")).rejects.toThrow("CI mode");
+    await expect(handler("Needs approval")).rejects.toThrow("Approval denied");
     expect(state.approvals).toBeUndefined();
   });
 

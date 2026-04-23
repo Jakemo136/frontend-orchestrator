@@ -2,7 +2,7 @@ import type { ApprovalMode, WorkflowState, ApprovalRecord, NeedsApprovalSignal }
 
 export class ApprovalDeniedError extends Error {
   constructor(prompt: string) {
-    super(`Approval denied in CI mode: ${prompt}`);
+    super(`Approval denied: ${prompt}`);
     this.name = "ApprovalDeniedError";
   }
 }
