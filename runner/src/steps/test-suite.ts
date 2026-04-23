@@ -8,10 +8,10 @@ export class TestSuiteStep extends BaseStep {
     return {
       id: this.definition.id,
       type: "test-suite",
-      summary: "Runs typecheck, unit tests, component tests, integration tests, and E2E suite for the current wave.",
+      summary: "Runs typecheck, client test suite, and E2E suite for the current wave.",
       prerequisites: [],
       artifacts: [],
-      passCondition: "Typecheck and client tests pass. Integration tests pass (including wiring tests). E2E is informational unless e2e_blocking is true.",
+      passCondition: "Typecheck and client tests pass. E2E is informational unless e2e_blocking is true.",
       failCondition: "Typecheck or client tests fail, or E2E fails when e2e_blocking is true.",
       scope: "component",
     };
