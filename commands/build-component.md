@@ -1,10 +1,24 @@
 ---
-description: Build a single component using TDD protocol with tests first
+description: Build components using TDD protocol — single component or entire wave
 ---
 
-# /build-component [ComponentName]
+# /build-component [ComponentName | --wave N]
 
-Build a single component using the TDD protocol.
+Build components using the TDD protocol.
+
+## Wave mode: /build-component --wave N
+
+When called with `--wave N` (by the build-wave pipeline step):
+1. Read /docs/COMPONENT_INVENTORY.md
+2. Find all components assigned to wave N
+3. For each component in the wave, run the full TDD protocol below
+4. Report results per component:
+   | Component | Tests Written | Tests Passing | Status |
+   |-----------|--------------|---------------|--------|
+
+## Single-component mode: /build-component [ComponentName]
+
+When called with a component name:
 
 Pre-flight:
 - Read /docs/UI_REQUIREMENTS.md
