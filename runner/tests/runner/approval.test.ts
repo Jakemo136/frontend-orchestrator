@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { createApprovalHandler, ApprovalDeniedError, NeedsApprovalSignal } from "../../src/runner/approval.js";
+import { createApprovalHandler, ApprovalDeniedError } from "../../src/runner/approval.js";
 import type { WorkflowState } from "../../src/types.js";
 
 function makeState(): WorkflowState {
@@ -35,10 +35,4 @@ describe("createApprovalHandler", () => {
     expect(state.approvals).toBeUndefined();
   });
 
-  it("interactive mode: throws NeedsApprovalSignal with message 'needs_approval'", async () => {
-    const state = makeState();
-    const handler = createApprovalHandler("interactive", state, "interact-step");
-    await expect(handler("Human, please review")).rejects.toThrow(NeedsApprovalSignal);
-    await expect(handler("Human, please review")).rejects.toThrow("needs_approval");
-  });
 });

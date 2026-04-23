@@ -55,6 +55,7 @@ mechanism so users know exactly what to trust.
 | Cross-browser testing | Manual-only | Not in pipeline |
 | Content review | Manual-only | Not in pipeline |
 | Server-side test coverage | Manual-only | `config.commands.test_server` exists but not wired into default pipeline |
+| End-to-end fixture test | Manual-only | Not yet implemented — runner tests validate mechanics, not operational completeness against a real project |
 
 ## How to Read This
 

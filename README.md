@@ -2,7 +2,7 @@
 
 A Claude Code plugin that builds your entire frontend from a conversation. Describe what you want, it interviews you, writes tests, builds components, audits everything, and opens PRs — dependency order, TDD, your approval at every gate.
 
-`/ui-interview` asks about pages, components, data flows, and edge cases. `/build-pipeline` resolves components into dependency waves (leaf nodes first), writes failing tests, builds to green, and audits each wave before opening PRs. Nothing ships without your sign-off.
+`/ui-interview` asks about pages, components, data flows, and edge cases. `/build-pipeline` resolves components into dependency waves (leaf nodes first), writes failing tests, builds to green, and audits each wave before opening PRs. Nothing ships without your sign-off — the pipeline pauses at every gate (requirements, build plan, baseline, merge) and returns control to your Claude Code session. You review the output and decide whether to continue. In CI mode (`approval_mode: ci`), approval gates reject automatically.
 
 ## Quick start
 
@@ -19,7 +19,7 @@ git clone https://github.com/Jakemo136/frontend-orchestrator.git \
 
 The plugin **must** live at `.claude/plugins/frontend-orchestration/` relative to your workspace root.
 
-Setup installs dependencies, Playwright browsers, and symlinks commands into `.claude/commands/` for discovery. Restart Claude Code after install, then verify with `/session-start`.
+Setup installs dependencies, Playwright browsers, and symlinks commands into `.claude/commands/` for discovery. It also offers to install **quality gate hooks** that block `git commit` until code-review and code-simplify have run in the current session. Hooks are recommended but optional — decline during setup or install later via `setup/install-hooks.md`. Restart Claude Code after install, then verify with `/session-start`.
 
 Create `orchestrator.config.yaml` in your project root:
 
@@ -99,7 +99,7 @@ frontend-orchestration/
   mcp/            2 MCP servers (a11y-scanner, screenshot-review + visual regression)
   standards/      Design, a11y, and UX quality checklists
   docs/           Quality matrix, audit findings, implementation plans
-  setup/          Hooks and install
+  setup/          Hooks, install script, quality gate config
 ```
 
 See [`docs/QUALITY_MATRIX.md`](docs/QUALITY_MATRIX.md) for which checks are runner-enforced vs. prompt-delegated vs. manual.
@@ -123,6 +123,10 @@ Critical/Major issues are auto-fixed and re-verified. Minor issues are flagged f
 ## Evidence pipeline
 
 E2E test runs collect Playwright traces, failure screenshots, and a machine-readable `evidence-manifest.json` — all persisted to `.orchestrator/evidence/`.
+
+## Compatibility
+
+The runner is framework-agnostic — it executes shell commands from your config and tracks state in JSON. The testing conventions (post-wave review, wiring audit) are designed for React + GraphQL + Vitest + RTL + Playwright + MSW. Other stacks work with the runner but need adapted command specs. See `runner/README.md` for the full compatibility matrix.
 
 ## Requirements
 

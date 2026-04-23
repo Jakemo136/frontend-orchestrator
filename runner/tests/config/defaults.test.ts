@@ -58,10 +58,10 @@ describe("generateDefaultPipeline", () => {
     expect(ids).not.toContain("merge-to-main");
   });
 
-  it("wires dependency-resolve after user-story-generation", () => {
+  it("wires dependency-resolve after e2e-scaffold", () => {
     const steps = generateDefaultPipeline(BASE_CONFIG);
     const depResolve = steps.find((s) => s.id === "dependency-resolve")!;
-    expect(depResolve.deps).toContain("user-story-generation");
+    expect(depResolve.deps).toContain("e2e-scaffold");
   });
 
   it("wires e2e-scaffold after user-story-generation (parallel with dependency-resolve)", () => {
@@ -79,5 +79,30 @@ describe("generateDefaultPipeline", () => {
     expect(usg.deps).toContain("ui-interview");
     const e2e = steps.find((s) => s.id === "e2e-scaffold")!;
     expect(e2e.deps).toContain("user-story-generation");
+  });
+
+  it("generates build-wave steps for page scope", () => {
+    const config = { ...BASE_CONFIG, scope: { type: "page" as const, target: null } };
+    const steps = generateDefaultPipeline(config);
+    const buildWave = steps.find((s) => s.id === "build-wave:0");
+    expect(buildWave).toBeDefined();
+    expect(buildWave!.type).toBe("build-wave");
+    expect(buildWave!.deps).toContain("dependency-resolve");
+  });
+
+  it("generates test-suite, post-wave-review, open-prs, await-merge for page scope", () => {
+    const config = { ...BASE_CONFIG, scope: { type: "page" as const, target: null } };
+    const steps = generateDefaultPipeline(config);
+    expect(steps.find((s) => s.id === "test-suite:0")).toBeDefined();
+    expect(steps.find((s) => s.id === "post-wave-review:0")).toBeDefined();
+    expect(steps.find((s) => s.id === "open-prs:0")).toBeDefined();
+    expect(steps.find((s) => s.id === "await-merge:0")).toBeDefined();
+  });
+
+  it("wires e2e-green after await-merge:0 for page scope", () => {
+    const config = { ...BASE_CONFIG, scope: { type: "page" as const, target: null } };
+    const steps = generateDefaultPipeline(config);
+    const e2eGreen = steps.find((s) => s.id === "e2e-green");
+    expect(e2eGreen!.deps).toContain("await-merge:0");
   });
 });

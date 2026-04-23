@@ -99,15 +99,41 @@ server.tool(
 
     fs.mkdirSync(baselineRouteDir, { recursive: true })
 
+    const baselined = []
     for (const breakpoint of Object.keys(DEFAULT_BREAKPOINTS)) {
       const src = path.join(routeDir, `${breakpoint}.png`)
       const dest = path.join(baselineRouteDir, `${breakpoint}.png`)
-      if (fs.existsSync(src)) fs.copyFileSync(src, dest)
+      if (fs.existsSync(src)) {
+        fs.copyFileSync(src, dest)
+        baselined.push(breakpoint)
+      }
     }
+
+    // Write/update metadata.json
+    const metadataPath = path.join(baselineDir, 'metadata.json')
+    let metadata = { baselined_at: '', routes: {} }
+    if (fs.existsSync(metadataPath)) {
+      try {
+        metadata = JSON.parse(fs.readFileSync(metadataPath, 'utf-8'))
+      } catch {
+        // Corrupted metadata — start fresh
+      }
+    }
+
+    const now = new Date().toISOString()
+    metadata.baselined_at = now
+    if (!metadata.routes) metadata.routes = {}
+    metadata.routes[route] = {
+      baselined_at: now,
+      breakpoints: baselined
+    }
+
+    fs.writeFileSync(metadataPath, JSON.stringify(metadata, null, 2) + '\n')
 
     const output = {
       baselined: route,
-      breakpoints: Object.keys(DEFAULT_BREAKPOINTS)
+      breakpoints: baselined,
+      metadata_path: metadataPath
     }
 
     return {

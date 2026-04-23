@@ -118,7 +118,7 @@ export interface CommandResult {
 
 // ─── Approval ────────────────────────────────────────
 
-export type ApprovalMode = "interactive" | "auto" | "ci";
+export type ApprovalMode = "auto" | "ci";
 
 export interface ApprovalRecord {
   stepId: string;

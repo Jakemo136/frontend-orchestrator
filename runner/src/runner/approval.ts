@@ -7,14 +7,6 @@ export class ApprovalDeniedError extends Error {
   }
 }
 
-export class NeedsApprovalSignal extends Error {
-  readonly __type = "needs_approval";
-  constructor(public readonly prompt: string, public readonly stepId: string) {
-    super("needs_approval");
-    this.name = "NeedsApprovalSignal";
-  }
-}
-
 function recordApproval(state: WorkflowState, stepId: string, prompt: string, mode: ApprovalMode): void {
   if (!state.approvals) state.approvals = [];
   const record: ApprovalRecord = { stepId, prompt, mode, approved_at: new Date().toISOString() };
@@ -34,8 +26,10 @@ export function createApprovalHandler(
         return;
       case "ci":
         throw new ApprovalDeniedError(prompt);
-      case "interactive":
-        throw new NeedsApprovalSignal(prompt, stepId);
+      default: {
+        const _exhaustive: never = mode;
+        throw new Error(`Unknown approval mode: ${_exhaustive}`);
+      }
     }
   };
 }
