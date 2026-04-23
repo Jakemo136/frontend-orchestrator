@@ -1,6 +1,6 @@
 # Frontend Orchestration
 
-A Claude Code plugin that builds your entire frontend from a conversation. Describe what you want, it interviews you, writes tests, builds components, audits everything, and opens PRs — dependency order, TDD, your approval at every gate.
+A Claude Code plugin that builds your entire frontend from a conversation. Describe what you want, it interviews you, writes tests, builds components, audits everything, and opens PRs — dependency order, TDD, configurable approval gates.
 
 `/ui-interview` asks about pages, components, data flows, and edge cases. `/build-pipeline` resolves components into dependency waves (leaf nodes first), writes failing tests, builds to green, and audits each wave before opening PRs. Nothing ships without passing every gate. In `interactive` mode, the pipeline pauses at each gate and returns control to your Claude Code session — you review and decide whether to continue. In the default `auto` mode, gates are logged and auto-approved. In `ci` mode, gates reject automatically.
 
