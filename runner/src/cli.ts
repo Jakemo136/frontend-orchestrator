@@ -31,10 +31,12 @@ export interface ParsedCommand {
   command: "run" | "status" | "explain" | "run-step" | "reset" | "init";
   stepId?: string;
   commandResults?: Map<string, CommandResult>;
+  approvalResults?: Map<string, boolean>;
 }
 
 export function parseArgs(args: string[]): ParsedCommand {
   const commandResults = new Map<string, CommandResult>();
+  const approvalResults = new Map<string, boolean>();
 
   // Extract --command-result flags before parsing command
   const filtered: string[] = [];
@@ -53,12 +55,21 @@ export function parseArgs(args: string[]): ParsedCommand {
         }
       }
       i++; // skip the value arg
+    } else if (args[i] === "--approval-result" && args[i + 1]) {
+      const arg = args[i + 1]!;
+      const eqIndex = arg.indexOf("=");
+      if (eqIndex > 0) {
+        const stepId = arg.slice(0, eqIndex);
+        const verdict = arg.slice(eqIndex + 1);
+        approvalResults.set(stepId, verdict === "approved");
+      }
+      i++;
     } else {
       filtered.push(args[i]!);
     }
   }
 
-  if (filtered.length === 0) return { command: "run", commandResults };
+  if (filtered.length === 0) return { command: "run", commandResults, approvalResults };
 
   const first = filtered[0]!;
 
@@ -67,14 +78,14 @@ export function parseArgs(args: string[]): ParsedCommand {
   if (first === "init") return { command: "init" };
 
   if (first === "run" && filtered[1]) {
-    return { command: "run-step", stepId: filtered[1], commandResults };
+    return { command: "run-step", stepId: filtered[1], commandResults, approvalResults };
   }
 
   if (first === "reset" && filtered[1]) {
     return { command: "reset", stepId: filtered[1] };
   }
 
-  return { command: "run", commandResults };
+  return { command: "run", commandResults, approvalResults };
 }
 
 export function getWaveCount(state: WorkflowState): number {
@@ -179,7 +190,7 @@ async function main() {
       const stateMgr = new StateManager(projectRoot);
       const state = stateMgr.load(config.project, config.scope);
       const steps = config.steps ?? generateDefaultPipeline(config, getWaveCount(state));
-      const executor = new Executor(config, steps, projectRoot, cmd.commandResults);
+      const executor = new Executor(config, steps, projectRoot, cmd.commandResults, cmd.approvalResults);
       const output = await executor.runParallel();
       process.stdout.write(JSON.stringify(output) + "\n");
 
@@ -212,7 +223,7 @@ async function main() {
       const stateMgr = new StateManager(projectRoot);
       const state = stateMgr.load(config.project, config.scope);
       const steps = config.steps ?? generateDefaultPipeline(config, getWaveCount(state));
-      const executor = new Executor(config, steps, projectRoot, cmd.commandResults);
+      const executor = new Executor(config, steps, projectRoot, cmd.commandResults, cmd.approvalResults);
 
       const output = await executor.runStep(cmd.stepId);
       process.stdout.write(JSON.stringify(output) + "\n");
