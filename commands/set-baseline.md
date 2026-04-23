@@ -19,7 +19,7 @@ the previous baseline.
 
 Uses screenshot-review MCP setBaseline method.
 
-After baselining, write metadata to
+After baselining, the MCP server writes metadata to
 screenshots/baseline/metadata.json:
 
 ```json
@@ -28,15 +28,15 @@ screenshots/baseline/metadata.json:
   "routes": {
     "[route]": {
       "baselined_at": "ISO timestamp",
-      "component_hashes": {
-        "[ComponentName]": "short file hash"
-      }
+      "breakpoints": ["mobile", "tablet", "desktop", "lgDesktop"]
     }
   }
 }
 ```
 
-On subsequent baselines, warn if any component file
-has changed since the baseline was set:
-"⚠️ [ComponentName] was modified since baseline was set.
+On subsequent baselines, check git status for files in
+the component directory related to this route. If any
+component source files have been modified since the
+baseline timestamp, warn:
+"⚠️ Component files modified since last baseline.
 Review screenshots before promoting."
