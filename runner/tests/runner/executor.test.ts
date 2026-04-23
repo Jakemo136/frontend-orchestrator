@@ -228,6 +228,63 @@ describe("Executor", () => {
     rmSync(dir, { recursive: true });
   });
 
+  it("runParallel executes independent steps concurrently and persists all results", async () => {
+    const dir = makeTempDir();
+    const steps: StepDefinition[] = [
+      { id: "a", type: "passing", deps: [], params: {} },
+      { id: "b", type: "passing", deps: [], params: {} },
+    ];
+    const executor = new Executor(CONFIG, steps, dir);
+    const result = await executor.runParallel();
+
+    expect(result.type).toBe("steps_complete");
+    if (result.type === "steps_complete") {
+      expect(result.results).toHaveLength(2);
+      expect(result.results.every((r) => r.result.status === "passed")).toBe(true);
+    }
+
+    const state = executor.getState();
+    expect(state.steps["a"]?.status).toBe("passed");
+    expect(state.steps["b"]?.status).toBe("passed");
+    rmSync(dir, { recursive: true });
+  });
+
+  it("runParallel falls back to runNext for a single runnable step", async () => {
+    const dir = makeTempDir();
+    const steps: StepDefinition[] = [
+      { id: "only", type: "passing", deps: [], params: {} },
+    ];
+    const executor = new Executor(CONFIG, steps, dir);
+    const result = await executor.runParallel();
+
+    expect(result.type).toBe("step_complete");
+    if (result.type === "step_complete") {
+      expect(result.stepId).toBe("only");
+    }
+    rmSync(dir, { recursive: true });
+  });
+
+  it("runParallel returns needs_command when a step signals, persists completed steps", async () => {
+    const dir = makeTempDir();
+    const steps: StepDefinition[] = [
+      { id: "cmd-step", type: "needs-command", deps: [], params: {} },
+      { id: "pass-step", type: "passing", deps: [], params: {} },
+    ];
+    const executor = new Executor(CONFIG, steps, dir);
+    const result = await executor.runParallel();
+
+    expect(result.type).toBe("needs_command");
+    if (result.type === "needs_command") {
+      expect(result.command).toBe("/test-command");
+    }
+
+    const state = executor.getState();
+    expect(state.steps["pass-step"]?.status).toBe("passed");
+    // Signaled step should be reverted (not in_progress)
+    expect(state.steps["cmd-step"]).toBeUndefined();
+    rmSync(dir, { recursive: true });
+  });
+
   it("resumes in_progress step with command result on second invocation", async () => {
     const dir = makeTempDir();
     const steps: StepDefinition[] = [

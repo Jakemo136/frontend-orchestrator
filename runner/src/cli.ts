@@ -170,7 +170,7 @@ async function main() {
       const config = loadConfig(projectRoot);
       const steps = config.steps ?? generateDefaultPipeline(config);
       const executor = new Executor(config, steps, projectRoot, cmd.commandResults);
-      const output = await executor.runNext();
+      const output = await executor.runParallel();
       process.stdout.write(JSON.stringify(output) + "\n");
 
       if (output.type === "pipeline_failed") {

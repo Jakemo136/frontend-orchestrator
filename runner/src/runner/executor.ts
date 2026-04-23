@@ -90,8 +90,26 @@ export class Executor {
     this.stateManager.save(this.state);
     const results = await fanOutSteps(tasks);
 
-    for (const { stepId, result } of results) {
+    const signaled = results.find((r) => r.signal);
+    const completed = results.filter((r) => !r.signal);
+
+    for (const { stepId, result } of completed) {
       this.persistAndComplete(stepId, result);
+    }
+
+    // Revert signaled steps so they're retryable on next invocation
+    for (const { stepId } of results.filter((r) => r.signal)) {
+      delete this.state.steps[stepId];
+      this.stateManager.save(this.state);
+    }
+
+    if (signaled) {
+      return {
+        type: "needs_command",
+        stepId: signaled.stepId,
+        command: signaled.signal!.command,
+        args: signaled.signal!.args,
+      };
     }
 
     const failed = results.find((r) => r.result.status === "failed");
