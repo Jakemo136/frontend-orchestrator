@@ -4,11 +4,16 @@ import { generateDefaultPipeline } from "../src/config/defaults.js";
 import { mkdirSync, rmSync } from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
-import type { OrchestratorConfig } from "../src/types.js";
+import { createFixtureProject } from "./helpers/fixture-project.js";
+import type { OrchestratorConfig, StepDefinition, CommandResult } from "../src/types.js";
 
 // Import steps to trigger registration
 import "../src/steps/session-start.js";
 import "../src/steps/requirements-gate.js";
+import "../src/steps/build-wave.js";
+import "../src/steps/test-suite.js";
+import "../src/steps/build-client.js";
+import "../src/steps/dependency-resolve.js";
 
 function makeTempProject(): string {
   const dir = join(tmpdir(), `orchestrator-int-test-${Date.now()}`);
@@ -76,5 +81,67 @@ describe("Integration: component-scope pipeline", () => {
     expect(ids).not.toContain("e2e-scaffold");
     expect(ids).not.toContain("design-audit");
     rmSync(dir, { recursive: true });
+  });
+});
+
+describe("Integration: multi-step flows", () => {
+  it("build-wave preflight passes when fixture has inventory and wave-plan.json", async () => {
+    const fixture = createFixtureProject({}, {
+      inventory: "## Components\n- Header\n- Footer",
+      wavePlan: { wave_count: 1, waves: { "0": ["Header", "Footer"] } },
+    });
+    try {
+      const steps: StepDefinition[] = [
+        { id: "build-wave:0", type: "build-wave", deps: [], params: { wave: 0 } },
+      ];
+      const commandResults = new Map<string, CommandResult>([
+        ["/build-component --wave 0", { success: true, output: "built", artifacts: ["Header.tsx", "Footer.tsx"] }],
+      ]);
+      const executor = new Executor(fixture.config, steps, fixture.dir, commandResults);
+      const result = await executor.runNext();
+      expect(result.type).toBe("step_complete");
+      if (result.type === "step_complete") {
+        expect(result.result.status).toBe("passed");
+        expect(result.result.message).toContain("Wave 0");
+      }
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  it("test-suite runs through exec (not invokeCommand) and passes with echo commands", async () => {
+    const fixture = createFixtureProject();
+    try {
+      const steps: StepDefinition[] = [
+        { id: "test-suite:0", type: "test-suite", deps: [], params: {} },
+      ];
+      const executor = new Executor(fixture.config, steps, fixture.dir);
+      const result = await executor.runNext();
+      expect(result.type).toBe("step_complete");
+      if (result.type === "step_complete") {
+        expect(result.result.status).toBe("passed");
+        expect(result.result.metrics.typecheck).toBe(0);
+        expect(result.result.metrics.client_tests).toBe(0);
+      }
+    } finally {
+      fixture.cleanup();
+    }
+  });
+
+  it("pipeline fails on preflight when required artifact is missing", async () => {
+    const fixture = createFixtureProject();
+    try {
+      const steps: StepDefinition[] = [
+        { id: "build-wave:0", type: "build-wave", deps: [], params: { wave: 0 } },
+      ];
+      const executor = new Executor(fixture.config, steps, fixture.dir);
+      const result = await executor.runNext();
+      expect(result.type).toBe("pipeline_failed");
+      if (result.type === "pipeline_failed") {
+        expect(result.result.message).toContain("Missing");
+      }
+    } finally {
+      fixture.cleanup();
+    }
   });
 });
