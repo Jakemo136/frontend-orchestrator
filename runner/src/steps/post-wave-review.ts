@@ -13,6 +13,7 @@ export class PostWaveReviewStep extends BaseStep {
       passCondition: "No critical issues. Wiring tests exist for every parent-child rendering edge. No fireEvent.change for text inputs. Schema-driven MSW used (no hand-written JSON mocks).",
       failCondition: "Critical issues found, missing wiring tests, or convention violations.",
       scope: "page",
+      verification: "command-result",
     };
   }
 

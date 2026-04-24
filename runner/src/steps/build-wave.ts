@@ -14,6 +14,7 @@ export class BuildWaveStep extends BaseStep {
       passCondition: "All components built, reviewed, and wiring-audited. Integration tests verify parent-child prop chains.",
       failCondition: "Any component build fails.",
       scope: "component",
+      verification: "command-result",
     };
   }
 

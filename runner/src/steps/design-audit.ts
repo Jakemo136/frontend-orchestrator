@@ -13,6 +13,7 @@ export class DesignAuditStep extends BaseStep {
       passCondition: "Design audit command succeeds.",
       failCondition: "Dev server not running or audit command fails.",
       scope: "page",
+      verification: "command-result",
     };
   }
 

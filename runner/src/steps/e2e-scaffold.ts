@@ -56,6 +56,7 @@ export class E2eScaffoldStep extends BaseStep {
       passCondition: "E2E scaffold command succeeds.",
       failCondition: "Command fails or requirements missing.",
       scope: "page",
+      verification: "command-result",
     };
   }
 

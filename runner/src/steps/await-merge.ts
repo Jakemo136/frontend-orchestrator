@@ -26,6 +26,7 @@ export class AwaitMergeStep extends BaseStep {
       passCondition: "All PRs for the wave are merged.",
       failCondition: "PRs remain unmerged or cannot be validated.",
       scope: "component",
+      verification: "ci-check",
     };
   }
 
