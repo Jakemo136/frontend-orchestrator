@@ -13,6 +13,7 @@ export class PreCommitReviewStep extends BaseStep {
       passCondition: "All tests pass and no critical review issues.",
       failCondition: "Tests fail or critical review issues found.",
       scope: "component",
+      verification: "exit-code",
     };
   }
 

@@ -14,6 +14,7 @@ export class BuildClientStep extends BaseStep {
       passCondition: "Build command exits with code 0.",
       failCondition: "Build command exits with non-zero code.",
       scope: "component",
+      verification: "exit-code",
     };
   }
 

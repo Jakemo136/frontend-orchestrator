@@ -13,6 +13,7 @@ export class SessionStartStep extends BaseStep {
       passCondition: "briefing generated. Always passes — missing files are reported, not fatal.",
       failCondition: "never",
       scope: "component",
+      verification: "command-result",
     };
   }
 

@@ -163,6 +163,7 @@ async function main() {
             passCondition: "N/A",
             failCondition: "N/A",
             scope: "component" as const,
+            verification: "command-result" as const,
           };
         }
         return new StepClass(stepDef).describe();

@@ -14,6 +14,7 @@ export class OpenPrsStep extends BaseStep {
       passCondition: "All PRs created and CI is green.",
       failCondition: "PR creation fails or CI fails.",
       scope: "component",
+      verification: "command-result",
     };
   }
 

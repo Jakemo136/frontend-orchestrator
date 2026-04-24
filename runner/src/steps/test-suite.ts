@@ -14,6 +14,7 @@ export class TestSuiteStep extends BaseStep {
       passCondition: "Typecheck and client tests pass. E2E is informational unless e2e_blocking is true.",
       failCondition: "Typecheck or client tests fail, or E2E fails when e2e_blocking is true.",
       scope: "component",
+      verification: "exit-code",
     };
   }
 
