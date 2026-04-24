@@ -89,7 +89,7 @@ export class AwaitMergeStep extends BaseStep {
 
     if (requiredChecks.length > 0 || informationalChecks.length > 0) {
       for (const pr of prs) {
-        const checksByName = new Map(pr.statusCheckRollup.map((c) => [c.name, c.state]));
+        const checksByName = new Map((pr.statusCheckRollup ?? []).map((c) => [c.name, c.state]));
 
         for (const check of requiredChecks) {
           const state = checksByName.get(check);

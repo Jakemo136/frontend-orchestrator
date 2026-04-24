@@ -204,6 +204,19 @@ describe("AwaitMergeStep", () => {
     expect(result.message).toContain("Warnings");
   });
 
+  it("handles PR with undefined statusCheckRollup gracefully", async () => {
+    const prs = [{ number: 1, state: "MERGED", title: "A" }];
+    const exec = vi.fn(async () => ({
+      exitCode: 0, stdout: JSON.stringify(prs), stderr: "", timedOut: false,
+    }));
+    const ctx = makeMockContext({ exec });
+    ctx.config.ci.required_on_feature = ["build"];
+    const step = new AwaitMergeStep(makeDefinition({ params: { wave: 0 } }));
+    const result = await step.execute(ctx);
+    expect(result.status).toBe("failed");
+    expect(result.message).toContain("missing");
+  });
+
   it("execute passes with no CI config (backwards compat)", async () => {
     const prs = [
       { number: 1, state: "MERGED", title: "PR 1", statusCheckRollup: [] },

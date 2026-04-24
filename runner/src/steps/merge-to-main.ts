@@ -22,7 +22,16 @@ export class MergeToMainStep extends BaseStep {
     if (!branch) {
       return { ready: false, issues: ["No feature branch configured in config.branches.feature"] };
     }
-    return { ready: true, issues: [] };
+    const issues: string[] = [];
+    const branchCheck = await ctx.exec(`git rev-parse --verify refs/heads/${branch}`);
+    if (branchCheck.exitCode !== 0) {
+      issues.push(`Feature branch "${branch}" does not exist in git`);
+    }
+    const ghCheck = await ctx.exec("gh auth status");
+    if (ghCheck.exitCode !== 0) {
+      issues.push("gh CLI is not authenticated — run 'gh auth login' first");
+    }
+    return { ready: issues.length === 0, issues };
   }
 
   async execute(ctx: RunContext): Promise<StepResult> {
@@ -55,7 +64,7 @@ export class MergeToMainStep extends BaseStep {
             message: `Failed to create PR: ${prResult.stderr || prResult.stdout}`,
           };
         }
-        prUrl = prResult.stdout.trim();
+        prUrl = prResult.stdout.trim().split("\n")[0]!;
       }
     } else {
       const prResult = await ctx.exec(
@@ -69,7 +78,7 @@ export class MergeToMainStep extends BaseStep {
           message: `Failed to create PR: ${prResult.stderr || prResult.stdout}`,
         };
       }
-      prUrl = prResult.stdout.trim();
+      prUrl = prResult.stdout.trim().split("\n")[0]!;
     }
 
     let parseWarning = "";
@@ -81,16 +90,20 @@ export class MergeToMainStep extends BaseStep {
       if (checksResult.exitCode === 0) {
         try {
           const checks = JSON.parse(checksResult.stdout) as Array<{ name: string; state: string }>;
+          const checkNames = new Set(checks.map((c) => c.name));
+          const missing = requiredChecks.filter((name) => !checkNames.has(name));
           const failing = checks
             .filter((c) => requiredChecks.includes(c.name))
             .filter((c) => c.state !== "SUCCESS" && c.state !== "SKIPPED");
-          if (failing.length > 0) {
-            const list = failing.map((c) => `${c.name} (${c.state})`).join(", ");
+          if (failing.length > 0 || missing.length > 0) {
+            const parts: string[] = [];
+            if (failing.length > 0) parts.push(failing.map((c) => `${c.name} (${c.state})`).join(", "));
+            if (missing.length > 0) parts.push(missing.map((name) => `${name} (missing)`).join(", "));
             return {
               status: "failed",
               artifacts: [],
-              metrics: { failing_checks: failing.length },
-              message: `Required CI checks failing: ${list}`,
+              metrics: { failing_checks: failing.length + missing.length },
+              message: `Required CI checks not passing: ${parts.join("; ")}`,
             };
           }
         } catch {

@@ -34,11 +34,33 @@ describe("MergeToMainStep", () => {
     expect(result.issues[0]).toContain("feature branch");
   });
 
-  it("preflight passes when feature branch exists", async () => {
-    const ctx = makeMockContext(); // default has feature: "feat/test"
+  it("preflight passes when feature branch exists and gh is authed", async () => {
+    const exec = vi.fn(async () => ({ exitCode: 0, stdout: "", stderr: "", timedOut: false }));
+    const ctx = makeMockContext({ exec });
     const step = new MergeToMainStep(makeDefinition());
     const result = await step.preflight(ctx);
     expect(result.ready).toBe(true);
+  });
+
+  it("preflight fails when git branch does not exist", async () => {
+    const exec = vi.fn(async () => ({ exitCode: 128, stdout: "", stderr: "fatal: not a valid ref", timedOut: false }));
+    const ctx = makeMockContext({ exec });
+    const step = new MergeToMainStep(makeDefinition());
+    const result = await step.preflight(ctx);
+    expect(result.ready).toBe(false);
+    expect(result.issues[0]).toContain("does not exist");
+  });
+
+  it("preflight fails when gh CLI is not authenticated", async () => {
+    const exec = vi.fn(async (cmd: string) => {
+      if (cmd.includes("git rev-parse")) return { exitCode: 0, stdout: "", stderr: "", timedOut: false };
+      return { exitCode: 1, stdout: "", stderr: "not logged in", timedOut: false };
+    });
+    const ctx = makeMockContext({ exec });
+    const step = new MergeToMainStep(makeDefinition());
+    const result = await step.preflight(ctx);
+    expect(result.ready).toBe(false);
+    expect(result.issues[0]).toContain("gh");
   });
 
   it("execute passes when PR created and user merges", async () => {
@@ -97,6 +119,36 @@ describe("MergeToMainStep", () => {
     // The approval prompt should contain the existing PR URL
     const approvalPrompt = awaitApproval.mock.calls[0][0] as string;
     expect(approvalPrompt).toContain("https://github.com/test/pr/42");
+  });
+
+  it("execute fails when required check is missing from CI results", async () => {
+    const checks = [{ name: "build", state: "SUCCESS" }];
+    const exec = vi.fn()
+      .mockResolvedValueOnce({ exitCode: 0, stdout: "[]", stderr: "", timedOut: false })
+      .mockResolvedValueOnce({ exitCode: 0, stdout: "https://github.com/test/pr/1", stderr: "", timedOut: false })
+      .mockResolvedValueOnce({ exitCode: 0, stdout: JSON.stringify(checks), stderr: "", timedOut: false });
+    const awaitApproval = vi.fn(async () => {});
+    const ctx = makeMockContext({ exec, awaitApproval });
+    ctx.config.ci.required_on_main = ["build", "nonexistent-check"];
+    const step = new MergeToMainStep(makeDefinition());
+    const result = await step.execute(ctx);
+    expect(result.status).toBe("failed");
+    expect(result.message).toContain("nonexistent-check");
+    expect(result.message).toContain("missing");
+  });
+
+  it("execute extracts first line from multi-line gh pr create output", async () => {
+    const exec = vi.fn()
+      .mockResolvedValueOnce({ exitCode: 0, stdout: "[]", stderr: "", timedOut: false })
+      .mockResolvedValueOnce({ exitCode: 0, stdout: "https://github.com/test/pr/1\nsome extra output\n", stderr: "", timedOut: false });
+    const awaitApproval = vi.fn(async () => {});
+    const ctx = makeMockContext({ exec, awaitApproval });
+    const step = new MergeToMainStep(makeDefinition());
+    const result = await step.execute(ctx);
+    expect(result.status).toBe("passed");
+    const approvalPrompt = awaitApproval.mock.calls[0]![0] as string;
+    expect(approvalPrompt).toContain("https://github.com/test/pr/1");
+    expect(approvalPrompt).not.toContain("extra output");
   });
 
   it("execute fails when required CI checks are failing", async () => {
