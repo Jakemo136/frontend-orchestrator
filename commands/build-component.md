@@ -57,13 +57,20 @@ TDD Protocol:
      file with a comment, don't use a hardcoded value
    - Do not use inline styles or hardcoded values
 7. Run tests again — confirm still passing
-8. Code review gate:
-   - Invoke the code-reviewer agent against all files changed
-     for this component (component file, test file, CSS module)
-   - If Critical issues found: fix, re-run tests, re-review
-   - If Major issues found: fix, re-run tests, re-review
+8. Review gate (see standards/review-gate.md):
+   - Invoke `frontend-orchestration:code-review` against all
+     files changed for this component (component file, test
+     file, CSS module)
+   - Invoke `frontend-orchestration:code-simplify` against
+     the same fileset
+   - If either returns Critical or Major findings:
+     fix, re-run tests, re-run both skills
    - Minor issues: note but do not block
-   - Review must pass clean (no Critical/Major) before continuing
+   - Both skills must return clean before continuing
+   - On a clean run, write `.orchestrator/last-review.json`
+     with `{ "component": "[ComponentName]", "ts": <unix-ts> }`
+     so the opt-in review-gate hook (if installed) lets the
+     PR through
 9. Update Build status in COMPONENT_INVENTORY.md to [x] complete
 10. Update /docs/BUILD_STATUS.md
 
