@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "fs";
 import { dirname } from "path";
 import { BaseStep } from "./base.js";
 import { registerStep } from "./registry.js";
@@ -13,6 +13,18 @@ export function countWaves(planContent: string): number {
 export interface WavePlan {
   wave_count: number;
   waves: Record<string, string[]>;
+}
+
+export function isValidWavePlan(data: unknown): data is WavePlan {
+  if (typeof data !== "object" || data === null) return false;
+  const obj = data as Record<string, unknown>;
+  if (typeof obj.wave_count !== "number") return false;
+  if (typeof obj.waves !== "object" || obj.waves === null) return false;
+  const waves = obj.waves as Record<string, unknown>;
+  for (const val of Object.values(waves)) {
+    if (!Array.isArray(val) || !val.every(v => typeof v === "string")) return false;
+  }
+  return true;
 }
 
 export function parseWavePlan(planContent: string): WavePlan {
@@ -86,13 +98,31 @@ export class DependencyResolveStep extends BaseStep {
       };
     }
 
-    const content = await ctx.readFile(planPath);
-    const wavePlan = parseWavePlan(content);
-
     const wavePlanPath = ".orchestrator/wave-plan.json";
     const absWavePlanPath = ctx.resolve(wavePlanPath);
-    mkdirSync(dirname(absWavePlanPath), { recursive: true });
-    writeFileSync(absWavePlanPath, JSON.stringify(wavePlan, null, 2) + "\n");
+    let wavePlan: WavePlan;
+
+    if (existsSync(absWavePlanPath)) {
+      try {
+        const raw = JSON.parse(readFileSync(absWavePlanPath, "utf-8"));
+        if (isValidWavePlan(raw)) {
+          wavePlan = raw;
+        } else {
+          const content = await ctx.readFile(planPath);
+          wavePlan = parseWavePlan(content);
+          writeFileSync(absWavePlanPath, JSON.stringify(wavePlan, null, 2) + "\n");
+        }
+      } catch {
+        const content = await ctx.readFile(planPath);
+        wavePlan = parseWavePlan(content);
+        writeFileSync(absWavePlanPath, JSON.stringify(wavePlan, null, 2) + "\n");
+      }
+    } else {
+      const content = await ctx.readFile(planPath);
+      wavePlan = parseWavePlan(content);
+      mkdirSync(dirname(absWavePlanPath), { recursive: true });
+      writeFileSync(absWavePlanPath, JSON.stringify(wavePlan, null, 2) + "\n");
+    }
 
     return {
       status: "passed",

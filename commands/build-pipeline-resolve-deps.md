@@ -19,30 +19,31 @@ Analyze component dependency graph and group components into build waves.
 3. Detect circular dependencies:
    - If any circular dependency exists, flag it and stop
 4. Group components by wave
-5. Write BUILD_PLAN.md with the complete wave structure:
+5. Write `.orchestrator/wave-plan.json` (primary structured output):
+   ```json
+   {
+     "wave_count": 2,
+     "waves": {
+       "0": ["Component1", "Component2"],
+       "1": ["Component3", "Component4"]
+     }
+   }
+   ```
+6. Write `BUILD_PLAN.md` (human-readable rendering):
    - One section per wave (## Wave 0, ## Wave 1, etc.)
    - List components under each wave as bullet points
    - Include a summary line: "Wave N: M components"
-6. Log results to BUILD_STATUS.md
+7. Log results to BUILD_STATUS.md
 
 ## Expected Outputs
 
-- `/docs/BUILD_PLAN.md` — markdown file with wave structure:
-  ```
-  # Build Plan
-  
-  ## Wave 0
-  - Component1
-  - Component2
-  
-  ## Wave 1
-  - Component3
-  - Component4
-  ```
+- `.orchestrator/wave-plan.json` — structured wave-to-component mapping (primary execution artifact)
+- `/docs/BUILD_PLAN.md` — human-readable wave structure (for review)
 
 ## Success Criteria
 
-- BUILD_PLAN.md exists
+- wave-plan.json exists and is valid JSON matching the schema above
+- BUILD_PLAN.md exists and matches wave-plan.json content
 - All components from COMPONENT_INVENTORY.md appear in exactly one wave
 - No circular dependencies detected
 - Waves are sequential (wave 0, then 1, then 2, etc.)
@@ -52,5 +53,5 @@ Analyze component dependency graph and group components into build waves.
 
 - COMPONENT_INVENTORY.md missing
 - Circular dependencies detected in the graph
-- BUILD_PLAN.md not generated
+- wave-plan.json or BUILD_PLAN.md not generated
 - Any component missing required dependencies

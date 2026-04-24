@@ -1,8 +1,8 @@
-import { mkdirSync, rmSync } from "fs";
+import { mkdirSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { describe, it, expect, vi } from "vitest";
-import { DependencyResolveStep, countWaves, parseWavePlan } from "../../src/steps/dependency-resolve.js";
+import { DependencyResolveStep, countWaves, parseWavePlan, isValidWavePlan } from "../../src/steps/dependency-resolve.js";
 import { ApprovalDeniedError } from "../../src/runner/approval.js";
 import { makeDefinition, makeMockContext } from "./helpers.js";
 
@@ -126,5 +126,78 @@ describe("DependencyResolveStep", () => {
     const content = "## Wave 0\n* CompA\n* CompB";
     const plan = parseWavePlan(content);
     expect(plan.waves["0"]).toEqual(["CompA", "CompB"]);
+  });
+
+  it("isValidWavePlan returns true for valid plan", () => {
+    expect(isValidWavePlan({ wave_count: 2, waves: { "0": ["A"], "1": ["B"] } })).toBe(true);
+  });
+
+  it("isValidWavePlan returns false for missing wave_count", () => {
+    expect(isValidWavePlan({ waves: { "0": ["A"] } })).toBe(false);
+  });
+
+  it("isValidWavePlan returns false for non-array waves entry", () => {
+    expect(isValidWavePlan({ wave_count: 1, waves: { "0": "not-array" } })).toBe(false);
+  });
+
+  it("isValidWavePlan returns false for null", () => {
+    expect(isValidWavePlan(null)).toBe(false);
+  });
+
+  it("execute prefers existing wave-plan.json over markdown parsing", async () => {
+    const tmpDir = join(tmpdir(), `dep-resolve-json-${Date.now()}`);
+    mkdirSync(join(tmpDir, ".orchestrator"), { recursive: true });
+    const wavePlan = { wave_count: 2, waves: { "0": ["Header"], "1": ["NavBar"] } };
+    writeFileSync(join(tmpDir, ".orchestrator/wave-plan.json"), JSON.stringify(wavePlan));
+    try {
+      const exists = vi.fn(async () => true);
+      const readFile = vi.fn(async () => "should not be called for parsing");
+      const awaitApproval = vi.fn(async () => {});
+      const ctx = makeMockContext({ exists, readFile, awaitApproval, resolve: (p: string) => join(tmpDir, p), projectRoot: tmpDir });
+      const step = new DependencyResolveStep(makeDefinition());
+      const result = await step.execute(ctx);
+      expect(result.status).toBe("passed");
+      expect(result.metrics.wave_count).toBe(2);
+      expect(readFile).not.toHaveBeenCalled();
+    } finally {
+      rmSync(tmpDir, { recursive: true });
+    }
+  });
+
+  it("execute falls back to markdown when wave-plan.json is invalid", async () => {
+    const tmpDir = join(tmpdir(), `dep-resolve-invalid-${Date.now()}`);
+    mkdirSync(join(tmpDir, ".orchestrator"), { recursive: true });
+    writeFileSync(join(tmpDir, ".orchestrator/wave-plan.json"), '{"bad": true}');
+    try {
+      const exists = vi.fn(async () => true);
+      const readFile = vi.fn(async () => "## Wave 0\n- CompA\n## Wave 1\n- CompB");
+      const awaitApproval = vi.fn(async () => {});
+      const ctx = makeMockContext({ exists, readFile, awaitApproval, resolve: (p: string) => join(tmpDir, p), projectRoot: tmpDir });
+      const step = new DependencyResolveStep(makeDefinition());
+      const result = await step.execute(ctx);
+      expect(result.status).toBe("passed");
+      expect(result.metrics.wave_count).toBe(2);
+      expect(readFile).toHaveBeenCalled();
+    } finally {
+      rmSync(tmpDir, { recursive: true });
+    }
+  });
+
+  it("execute falls back to markdown when wave-plan.json has malformed JSON", async () => {
+    const tmpDir = join(tmpdir(), `dep-resolve-malformed-${Date.now()}`);
+    mkdirSync(join(tmpDir, ".orchestrator"), { recursive: true });
+    writeFileSync(join(tmpDir, ".orchestrator/wave-plan.json"), "not json at all");
+    try {
+      const exists = vi.fn(async () => true);
+      const readFile = vi.fn(async () => "## Wave 0\n- X");
+      const awaitApproval = vi.fn(async () => {});
+      const ctx = makeMockContext({ exists, readFile, awaitApproval, resolve: (p: string) => join(tmpDir, p), projectRoot: tmpDir });
+      const step = new DependencyResolveStep(makeDefinition());
+      const result = await step.execute(ctx);
+      expect(result.status).toBe("passed");
+      expect(readFile).toHaveBeenCalled();
+    } finally {
+      rmSync(tmpDir, { recursive: true });
+    }
   });
 });

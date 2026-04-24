@@ -18,11 +18,12 @@ export class BuildWaveStep extends BaseStep {
   }
 
   async preflight(ctx: RunContext): Promise<PreflightResult> {
-    const exists = await ctx.exists(ctx.config.artifacts.inventory);
-    return {
-      ready: exists,
-      issues: exists ? [] : [`Missing ${ctx.config.artifacts.inventory}`],
-    };
+    const issues: string[] = [];
+    const inventoryExists = await ctx.exists(ctx.config.artifacts.inventory);
+    if (!inventoryExists) issues.push(`Missing ${ctx.config.artifacts.inventory}`);
+    const wavePlanExists = await ctx.exists(".orchestrator/wave-plan.json");
+    if (!wavePlanExists) issues.push("Missing .orchestrator/wave-plan.json");
+    return { ready: issues.length === 0, issues };
   }
 
   async execute(ctx: RunContext): Promise<StepResult> {
