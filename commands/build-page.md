@@ -34,6 +34,25 @@ Wave execution per wave:
 - If any component fails: stop, surface failure, wait
   for user direction.
 
+Review gate — runs after RTL + E2E pass for the wave:
+1. Invoke `frontend-orchestration:code-review` against
+   all files changed by this wave
+2. Invoke `frontend-orchestration:code-simplify` against
+   the same fileset
+3. If either returns Critical or Major findings:
+   - Fix them
+   - Re-run the wave's RTL suite
+   - Re-run both skills until clean
+4. Minor findings may be noted but do not block
+5. Only when both skills return clean may the wave
+   be considered complete
+6. On a clean run, write `.orchestrator/last-review.json`
+   with `{ "wave": N, "ts": <unix-ts> }` so the opt-in
+   review-gate hook (if installed) lets PRs through
+
+See standards/review-gate.md for the philosophy and
+scope of this gate.
+
 On completion:
 - Run full RTL suite — all must pass
 - Run full E2E suite — log results

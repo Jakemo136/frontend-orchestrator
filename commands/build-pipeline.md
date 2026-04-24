@@ -83,6 +83,23 @@ Then:
 - Log results to BUILD_STATUS.md
 - Stop if failures exist, surface to user
 
+Per-wave review gate (runs after the wave's RTL + E2E pass,
+before moving to the next wave — see standards/review-gate.md):
+1. Invoke `frontend-orchestration:code-review` against all
+   files changed by this wave
+2. Invoke `frontend-orchestration:code-simplify` against
+   the same fileset
+3. If either returns Critical or Major findings:
+   - Fix them
+   - Re-run the wave's RTL suite
+   - Re-run both skills until clean
+4. Minor findings may be noted but do not block
+5. The wave is only considered complete when both skills
+   return clean
+6. On a clean run, write `.orchestrator/last-review.json`
+   with `{ "wave": N, "ts": <unix-ts> }` so the opt-in
+   review-gate hook (if installed) lets PRs through
+
 Update BUILD_STATUS.md with wave-level rollup:
 
 ## Wave [N] Progress
