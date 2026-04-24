@@ -14,6 +14,7 @@ export class MergeToMainStep extends BaseStep {
       passCondition: "PR is created and user merges it.",
       failCondition: "No feature branch configured, PR creation fails, or user declines.",
       scope: "app",
+      verification: "approval",
     };
   }
 

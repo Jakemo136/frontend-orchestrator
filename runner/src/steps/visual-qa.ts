@@ -13,6 +13,7 @@ export class VisualQaStep extends BaseStep {
       passCondition: "Visual QA command succeeds.",
       failCondition: "Design audit not run first or command fails.",
       scope: "page",
+      verification: "command-result",
     };
   }
 

@@ -13,6 +13,7 @@ export class UserStoryGenerationStep extends BaseStep {
       passCondition: "USER_STORIES.md exists, covers all forms/modals in inventory, includes Data flow annotations for cross-component flows, user approves.",
       failCondition: "Missing source docs, incomplete coverage, or user rejects.",
       scope: "page",
+      verification: "command-result",
     };
   }
 

@@ -61,6 +61,7 @@ export class DependencyResolveStep extends BaseStep {
       passCondition: "BUILD_PLAN.md exists and user approves the plan.",
       failCondition: "Inventory missing, BUILD_PLAN.md not generated, or user rejects.",
       scope: "page",
+      verification: "file-check",
     };
   }
 

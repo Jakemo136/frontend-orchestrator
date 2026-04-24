@@ -13,6 +13,7 @@ export class RequirementsGateStep extends BaseStep {
       passCondition: "Both artifact files exist AND user has explicitly approved them.",
       failCondition: "User cancels, artifacts missing, or user rejects approval.",
       scope: "component",
+      verification: "file-check",
     };
   }
 

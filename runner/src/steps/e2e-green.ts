@@ -14,6 +14,7 @@ export class E2eGreenStep extends BaseStep {
       passCondition: "E2E tests exit with code 0.",
       failCondition: "Any E2E test fails.",
       scope: "page",
+      verification: "exit-code",
     };
   }
 

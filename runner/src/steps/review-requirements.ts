@@ -13,6 +13,7 @@ export class ReviewRequirementsStep extends BaseStep {
       passCondition: "Review completed. Always passes — informational only.",
       failCondition: "never",
       scope: "page",
+      verification: "command-result",
     };
   }
 

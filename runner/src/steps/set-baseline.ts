@@ -13,6 +13,7 @@ export class SetBaselineStep extends BaseStep {
       passCondition: "User approves baseline overwrite and command succeeds.",
       failCondition: "User rejects or command fails.",
       scope: "page",
+      verification: "approval",
     };
   }
 

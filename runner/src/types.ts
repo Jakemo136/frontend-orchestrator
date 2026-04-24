@@ -74,6 +74,13 @@ export interface StepResult {
 
 // ─── Step Description (for --explain) ────────────────
 
+export type VerificationBasis =
+  | "exit-code"
+  | "file-check"
+  | "ci-check"
+  | "approval"
+  | "command-result";
+
 export interface StepDescription {
   id: string;
   type: string;
@@ -83,6 +90,7 @@ export interface StepDescription {
   passCondition: string;
   failCondition: string;
   scope: ScopeThreshold;
+  verification: VerificationBasis;
 }
 
 // ─── Preflight ───────────────────────────────────────

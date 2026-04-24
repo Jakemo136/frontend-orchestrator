@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { generateDefaultPipeline } from "../../src/config/defaults.js";
 import type { OrchestratorConfig } from "../../src/types.js";
+import { TestSuiteStep } from "../../src/steps/test-suite.js";
+import { BuildWaveStep } from "../../src/steps/build-wave.js";
+import { MergeToMainStep } from "../../src/steps/merge-to-main.js";
+import { AwaitMergeStep } from "../../src/steps/await-merge.js";
+import { makeDefinition } from "../steps/helpers.js";
 
 const BASE_CONFIG: OrchestratorConfig = {
   project: "test",
@@ -163,6 +168,26 @@ describe("generateDefaultPipeline", () => {
     const ids = steps.map((s) => s.id);
     expect(ids).toContain("build-wave:0");
     expect(ids).toContain("build-wave:1");
+  });
+
+  it("exit-code steps report verification as exit-code", () => {
+    const step = new TestSuiteStep(makeDefinition({ type: "test-suite" }));
+    expect(step.describe().verification).toBe("exit-code");
+  });
+
+  it("command-result steps report verification as command-result", () => {
+    const step = new BuildWaveStep(makeDefinition({ type: "build-wave", params: { wave: 0 } }));
+    expect(step.describe().verification).toBe("command-result");
+  });
+
+  it("approval steps report verification as approval", () => {
+    const step = new MergeToMainStep(makeDefinition({ type: "merge-to-main" }));
+    expect(step.describe().verification).toBe("approval");
+  });
+
+  it("ci-check steps report verification as ci-check", () => {
+    const step = new AwaitMergeStep(makeDefinition({ type: "await-merge", params: { wave: 0 } }));
+    expect(step.describe().verification).toBe("ci-check");
   });
 
   it("set-baseline depends on visual-qa", () => {
