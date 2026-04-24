@@ -78,7 +78,40 @@ approval_mode: interactive
 | `interactive` | Pipeline pauses, returns control to your session | Production builds, review-gated workflows |
 | `ci` | Gates reject automatically | CI/CD pipelines, zero-human-input runs |
 
-Set `approval_mode` in `orchestrator.config.yaml`. Gates that pause in interactive mode: build plan approval, baseline promotion, and any step that calls `awaitApproval`.
+Set `approval_mode` in `orchestrator.config.yaml`.
+
+### Steps with approval gates
+
+| Step | Prompt | What the user reviews |
+|------|--------|-----------------------|
+| `dependency-resolve` | "Review and approve build plan" | Wave assignments in BUILD_PLAN.md |
+| `set-baseline` | "Approve screenshots as baseline" | Screenshots before promoting to regression baseline |
+| `merge-to-main` | "Approve merge to main" | Final merge of the feature branch |
+
+### Interactive pause/resume
+
+When a step calls `awaitApproval` in `interactive` mode:
+
+1. The runner throws a `NeedsApprovalSignal` — a plain object (not an Error) with `{ __type: "needs_approval", stepId, prompt }`
+2. The CLI catches the signal and returns control to your Claude Code session
+3. You review the artifact referenced in the prompt
+4. Resume with `--approval-result stepId=true` (approve) or `stepId=false` (deny)
+5. On resume, the cached result is read — the handler proceeds or throws `ApprovalDeniedError`
+
+In `auto` mode, all gates log and proceed immediately. In `ci` mode, all gates throw `ApprovalDeniedError`.
+
+### Approval audit trail
+
+Every approval is recorded in `.orchestrator/state.json` under `state.approvals[]`:
+
+```json
+{
+  "stepId": "dependency-resolve",
+  "prompt": "Review and approve build plan: docs/BUILD_PLAN.md",
+  "mode": "interactive",
+  "approved_at": "2026-04-23T14:30:00.000Z"
+}
+```
 
 ## How it works
 
